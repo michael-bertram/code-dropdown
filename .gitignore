@@ -1,0 +1,8 @@
+node_modules/
+vendor/
+dist/
+build/
+
+.DS_Store
+.cache/
+**/inc/asset-settings.php
