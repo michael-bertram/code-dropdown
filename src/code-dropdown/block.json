@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wpe/code-dropdown",
+	"version": "0.1.0",
+	"title": "Code Dropdown",
+	"category": "widgets",
+	"icon": "screenoptions",
+	"description": "An interactive block with the Interactivity API.",
+	"example": {},
+	"supports": {
+		"interactivity": true
+	},
+	"attributes": {
+		"id": {
+			"type": "string"
+		}
+	},
+	"textdomain": "code-dropdown",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}

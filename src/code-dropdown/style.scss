@@ -1,0 +1,199 @@
+.wp-block-bigbite-task-block {
+	font-size: 18px;
+	display: flex;
+	flex-direction: column;
+	background: #fdeaea;
+	border-radius: 12px;
+		overflow: hidden;
+
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+	padding: 0.7rem 1.2rem;
+
+	&.dark-theme {
+		background: #333;
+		color: #fff;
+
+		button {
+			background: #555;
+			color: #fff;
+		}
+
+		p {
+			font-size:10px;
+			color: #ddd;
+		}
+	}
+
+	&.complete {
+		background-color: #caffd2;
+		transition: background-color 0.5s ease;
+	}
+}
+
+a:focus {
+    outline: none;
+}
+
+.task-header{
+	display: flex;
+	justify-content: space-between;
+	align-content: center;
+	align-items: center;
+
+}
+
+.task-header h3  {
+	margin: 0;
+}
+
+.task-header button {
+	border: 0;
+	font-size: 2rem;
+	background: none;
+	cursor: pointer;
+}
+
+
+/* Collapsible panel with animation */
+.task-panel {
+	display:flex;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 0;
+	opacity: 0;
+	overflow: hidden;
+	transition: height 0.33s ease, opacity 0.25s ease;
+}
+
+.task-panel.active {
+	    border-top: 2px dashed #cdcdcd;
+margin-top:12px;
+	height: auto; /* adjust for content height */
+	opacity: 1;
+}
+
+.panel-content {
+	margin-top: 1em;
+	margin-bottom: 1em;
+	padding:0 .5rem;
+}
+
+.task-footer {
+	display: flex;
+	justify-content: end;
+	align-items: end;
+}
+
+.task-footer p {
+	margin: 0;
+	font-size: 0.9em;
+	color: #555;
+}
+
+.task-footer button {
+	background: black;
+	color: #fff;
+	border: none;
+	border-radius: 100px;
+	padding: 8px 12px;
+	cursor: pointer;
+	transition: background 0.3s ease;
+}
+
+.task-footer button:hover {
+	color: #e1e1e1;
+	transform: (scale 1.05);
+}
+
+.task-comment label {
+	display: block;
+	margin-bottom: 0.5em;
+	font-weight: bold;
+}
+.task-comment textarea {
+	width: 98%;
+	min-height: 80px;
+	padding: 0.5em;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	resize: vertical;
+}
+.task-comment textarea:focus {
+	border-color: #2979fb;
+	outline: none;
+	box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
+}
+.comments-wrapper {
+	padding:1rem;
+	border:#ccc 1px dashed;
+	border-radius: 8px;
+	margin:1rem;
+}
+.task-comment {
+	margin-top: 1em;
+	display:flex;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 0;
+	opacity: 0;
+	overflow: hidden;
+	transition: height 0.33s ease, opacity 0.25s ease;
+}
+
+.task-comment.animate {
+	height: auto; /* adjust for content height */
+	opacity: 1;
+}
+.comments-wrapper h3 {
+	margin: 0;
+}
+.task-comments p {
+	padding: 0.5em;
+	border-radius: 4px;
+}
+.comments-wrapper button {
+	margin-top: 0.5em;
+	background: #00b2ff;
+	color: #fff;
+	border: none;
+	border-radius: 100px;
+	padding: 6px 10px;
+	cursor: pointer;
+	transition: background 0.3s ease;
+}
+
+.task-block-editor {
+
+  // Style first inner block (title)
+  > .block-editor-inner-blocks
+  > .block-editor-block-list__layout
+  > *:first-child {
+    border-bottom: 2px dashed #cdcdcd;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+
+  // Optional: style detail area
+  > .block-editor-inner-blocks
+  > .block-editor-block-list__layout
+  > *:not(:first-child) {
+    opacity: 0.95;
+  }
+}
+
+
+/* Task Completion Styles */
+button.is-completed {
+    background: #4caf50 !important;
+		border-color: #4caf50 !important;
+    color: white !important;
+}
+.task-block.complete {
+    border-left: 5px solid #4caf50;
+}
+
+
+
+
+
+

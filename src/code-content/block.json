@@ -1,0 +1,13 @@
+{
+  "apiVersion": 2,
+  "name": "wpe/code-content",
+  "title": "Code Content",
+  "category": "widgets",
+  "icon": "editor-paragraph",
+  "parent": ["wpe/code-dropdown"],
+  "supports": {
+    "html": false,
+    "reusable": false
+  },
+  "editorScript": "file:./index.js"
+}

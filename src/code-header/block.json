@@ -1,0 +1,14 @@
+{
+  "apiVersion": 2,
+  "name": "wpe/code-header",
+  "title": "Code Header",
+  "category": "widgets",
+  "icon": "editor-textcolor",
+  "parent": ["wpe/code-dropdown"],
+  "supports": {
+    "html": false
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.css",
+  "style": "file:./style.css"
+}
