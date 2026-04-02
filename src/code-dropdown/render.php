@@ -11,9 +11,9 @@ $title_html = '';
 $content_html = '';
 
 foreach ( $inner_blocks as $inner_block ) {
-    if ( 'bigbite/code-header' === $inner_block['blockName'] ) {
+    if ( 'wpe/code-header' === $inner_block['blockName'] ) {
         $title_html = render_block( $inner_block );
-    } elseif ( 'bigbite/code-content' === $inner_block['blockName'] ) {
+    } elseif ( 'wpe/code-content' === $inner_block['blockName'] ) {
         $content_html = render_block( $inner_block );
     }
 }

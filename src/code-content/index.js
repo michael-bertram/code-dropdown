@@ -2,7 +2,7 @@ import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
 import Save from './save';
 
-registerBlockType('bigbite/task-content', {
+registerBlockType('wpe/code-content', {
   edit: Edit,
   save: Save,
 });

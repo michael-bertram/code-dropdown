@@ -2,7 +2,7 @@ import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
 import Save from './save';
 
-registerBlockType('bigbite/task-title', {
+registerBlockType('wpe/code-header', {
   edit: Edit,
   save: Save,
 });
