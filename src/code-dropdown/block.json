@@ -14,7 +14,15 @@
 	"attributes": {
 		"id": {
 			"type": "string"
-		}
+		},
+    "showLanguageBadge": {
+        "type": "boolean",
+        "default": true
+    },
+    "codeLanguage": {
+        "type": "string",
+        "default": "PHP"
+    }
 	},
 	"textdomain": "code-dropdown",
 	"editorScript": "file:./index.js",
