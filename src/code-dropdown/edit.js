@@ -1,19 +1,71 @@
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
-import { useEffect } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+import { useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
+import { PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
+import './editor.scss';
 
-const TEMPLATE = [['wpe/code-header'], ['wpe/code-content']];
+export default function Edit({ attributes, setAttributes }) {
+    const { showLanguageBadge, codeLanguage } = attributes;
 
-export default function Edit({ attributes, setAttributes, clientId }) {
-  // If no ID exists, save the block's clientId as the permanent ID
-  useEffect(() => {
-    if (!attributes.id) {
-      setAttributes({ id: clientId });
-    }
-  }, []);
+    const blockProps = useBlockProps({
+        className: 'wp-block-wpe-code-dropdown-editor',
+    });
 
-  return (
-    <div {...useBlockProps({ className: 'task-block-editor' })}>
-      <InnerBlocks template={TEMPLATE} templateLock="all" />
-    </div>
-  );
+    const languageOptions = [
+        { label: 'PHP', value: 'PHP' },
+        { label: 'JavaScript', value: 'JS' },
+        { label: 'CSS', value: 'CSS' },
+        { label: 'HTML', value: 'HTML' },
+        { label: 'Python', value: 'Python' },
+        { label: 'SQL', value: 'SQL' },
+    ];
+
+    return (
+        <>
+            {/* Sidebar Controls Panel Settings */}
+            <InspectorControls>
+                <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={true}>
+                    <ToggleControl
+                        label={__('Show Language Badge', 'code-dropdown')}
+                        checked={showLanguageBadge}
+                        onChange={(value) => setAttributes({ showLanguageBadge: value })}
+                    />
+                    {showLanguageBadge && (
+                        <SelectControl
+                            label={__('Code Language', 'code-dropdown')}
+                            value={codeLanguage}
+                            options={languageOptions}
+                            onChange={(value) => setAttributes({ codeLanguage: value })}
+                        />
+                    )}
+                </PanelBody>
+            </InspectorControls>
+
+            {/* Structured Editor Canvas Container */}
+            <div {...blockProps}>
+                {/* 1. Header Layout Mock Layer */}
+                <div className="editor-header-wrapper">
+                    <span className="header-hint-label">{__('Header / Title', 'code-dropdown')}</span>
+                    
+                    {/* Live Badge Display on the right */}
+                    {showLanguageBadge && (
+                        <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
+                            {codeLanguage}
+                        </span>
+                    )}
+                </div>
+
+                {/* 2. Unified Nested Blocks Layout Stream */}
+                <div className="editor-inner-blocks-container">
+                    <InnerBlocks 
+                        allowedBlocks={['wpe/code-header', 'wpe/code-content']}
+                        template={[
+                            ['wpe/code-header', {}],
+                            ['wpe/code-content', {}]
+                        ]}
+                        templateLock="all"
+                    />
+                </div>
+            </div>
+        </>
+    );
 }

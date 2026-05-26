@@ -189,6 +189,46 @@
     }
 }
 
+/* Align title and badge side-by-side */
+.task-title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Global Badge Layout styles */
+.code-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Custom Language Palette Varietals */
+.code-badge.lang-php {
+    background: #eef2ff;
+    color: #4f46e5; /* PHP Indigo Accent */
+}
+
+.code-badge.lang-js {
+    background: #fef9c3;
+    color: #854d0e; /* Javascript Yellow-Gold Accent */
+}
+
+.code-badge.lang-css {
+    background: #ecfdf5;
+    color: #047857; /* CSS Teal Emerald Accent */
+}
+
+.code-badge.lang-html {
+    background: #fff7ed;
+    color: #c2410c; /* HTML Orange Accent */
+}
+
 /* Animations Keyframes */
 @keyframes popIn {
     0% { transform: scale(0.7); opacity: 0; }

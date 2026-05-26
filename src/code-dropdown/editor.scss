@@ -1,12 +1,58 @@
-/**
- * The following styles get applied inside the editor only.
- *
- * Replace them with your own styles or remove the file completely.
- */
+/* Editor canvas correction engine */
+.wp-block-wpe-code-dropdown-editor {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    margin: 1.5rem 0;
 
-.wp-block-bigbite-interactive-v6 input[type="text"] {
-	font-size: 1em;
-	color: inherit;
-	background: inherit;
-	border: 0;
+    /* Header Decorator Label Area */
+    .editor-header-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        padding: 8px 16px;
+        border-bottom: 1px dashed #e2e8f0;
+        
+        .header-hint-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+        }
+
+        .code-badge {
+            margin: 0;
+            flex-shrink: 0; /* Prevents text from turning vertical or getting squished */
+        }
+    }
+
+    /* Target Gutenberg's Inner block layouts sequentially */
+    .editor-inner-blocks-container {
+        
+        // This targets the block list wrapper inside the editor canvas
+        .block-editor-block-list__layout {
+            padding: 0 !important;
+            margin: 0 !important;
+
+            /* Child Block 1: The Title Input */
+            > *:first-child {
+                padding: 16px 20px;
+                background: #ffffff;
+                margin: 0 !important;
+            }
+
+            /* Child Block 2: The Code Content input panel */
+            > *:last-child {
+                padding: 20px;
+                background: #fafafa; /* Darker back-drop code deck matching frontend */
+                border-top: 1px solid #f1f5f9;
+                margin: 0 !important;
+            }
+        }
+    }
 }

@@ -1,12 +1,14 @@
 <?php
 $persistent_id = $attributes['id'] ?? '';
+// Pull our newly registered control attributes safely
+$show_badge    = $attributes['showLanguageBadge'] ?? true;
+$code_lang     = $attributes['codeLanguage'] ?? 'PHP';
 
 if ( empty( $persistent_id ) ) {
-    return; // Block must have a stable ID
+    return;
 }
 
 $inner_blocks = $block->parsed_block['innerBlocks'] ?? [];
-
 $title_html = '';
 $content_html = '';
 
@@ -31,29 +33,27 @@ foreach ( $inner_blocks as $inner_block ) {
         'closeText'    => '-',
         'toggleText'   => '+',
         'isComplete'   => false,
-        'isCopied'     => false, // Changed from copyText to a tracking boolean
+        'isCopied'     => false,
         'completeText' => esc_html__( 'Done', 'code-dropdown' ),
     )); ?>
 >
     <div class="code-header">
-        <div class="code-title">
-            <?php echo ! empty( $title_html ) ? $title_html : 'Add a title'; ?>
+        <div class="task-title-container">
+            <div class="task-title">
+                <?php echo ! empty( $title_html ) ? $title_html : 'Add a title'; ?>
+            </div>
+            
+            <?php if ( true === $show_badge ) : ?>
+                <span class="code-badge lang-<?php echo esc_attr( strtolower( $code_lang ) ); ?>">
+                    <?php echo esc_html( $code_lang ); ?>
+                </span>
+            <?php endif; ?>
         </div>
 
         <div class="code-actions">
-            <button 
-                class="copy-button" 
-                data-wp-on--click="actions.copyToClipboard"
-                data-wp-class--copied="context.isCopied"
-                aria-label="Copy code to clipboard"
-            >
-                <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
+            <button class="copy-button" data-wp-on--click="actions.copyToClipboard" data-wp-class--copied="context.isCopied" aria-label="Copy code to clipboard">
+                <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
 
             <button class="toggle-button" data-wp-on--click="actions.toggleOpen">
