@@ -1,199 +1,196 @@
+/* 1. Main Block Container */
 .wp-block-wpe-code-dropdown {
-	font-size: 18px;
-	display: flex;
-	flex-direction: column;
-	background: #fdeaea;
-	border-radius: 12px;
-		overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff; /* Clean base color */
+    border: 1px solid #e2e8f0; /* Subtle outer border */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 
-	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-	padding: 0.7rem 1.2rem;
+    /* Complete State - Smooth, subtle background shift */
+    &.complete {
+        background-color: #f0fdf4;
+        border-color: #bbf7d0;
+        
+        .code-header h3 {
+            color: #166534;
+        }
+    }
 
-	&.dark-theme {
-		background: #333;
-		color: #fff;
+    /* Dark Theme Support */
+    &.dark-theme {
+        background: #1e1e1e;
+        border-color: #2e2e2e;
+        color: #f4f4f5;
 
-		button {
-			background: #555;
-			color: #fff;
-		}
+        .code-header {
+            background: transparent;
+            border-bottom-color: #2e2e2e;
+        }
 
-		p {
-			font-size:10px;
-			color: #ddd;
-		}
-	}
+        .panel-content {
+            background: #151515;
+            border: 1px solid #2e2e2e;
+        }
 
-	&.complete {
-		background-color: #caffd2;
-		transition: background-color 0.5s ease;
-	}
+        .copy-button:hover,
+        .toggle-button:hover {
+            background: #2a2a2a;
+        }
+        
+        &.complete {
+            background-color: #062e14;
+            border-color: #14532d;
+        }
+    }
 }
 
-a:focus {
-    outline: none;
+/* 2. Seamless Header Area */
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 20px;
+    background: transparent; /* Removed blocky inner background */
+    border-bottom: 1px solid transparent; /* Becomes visible only when open */
+    transition: border-color 0.25s ease;
+
+    h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        transition: color 0.2s ease;
+    }
 }
 
-.task-header{
-	display: flex;
-	justify-content: space-between;
-	align-content: center;
-	align-items: center;
-
+.code-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.task-header h3  {
-	margin: 0;
+/* 3. Action Buttons Configuration */
+.copy-button, 
+.toggle-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #64748b;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+
+    &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
 }
 
-.task-header button {
-	border: 0;
-	font-size: 2rem;
-	background: none;
-	cursor: pointer;
+/* Icon Toggling Mechanical States */
+.copy-button {
+    .icon-check { display: none; }
+    .icon-copy { display: inline-block; }
+
+    &.copied {
+        color: #10b981;
+        .icon-copy { display: none; }
+        .icon-check {
+            display: inline-block;
+            animation: popIn 0.2s ease-out;
+        }
+    }
 }
 
+/* 4. Collapsible Body Panels (Seamless) */
+.code-panel {
+    display: flex;
+    flex-direction: column;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 
-/* Collapsible panel with animation */
-.task-panel {
-	display:flex;
-	flex-direction: column;
-	justify-content: space-between;
-	height: 0;
-	opacity: 0;
-	overflow: hidden;
-	transition: height 0.33s ease, opacity 0.25s ease;
+    &.active {
+        height: auto;
+        opacity: 1;
+        
+        /* Add border to header structurally when open */
+        border-top: none; 
+    }
 }
 
-.task-panel.active {
-	    border-top: 2px dashed #cdcdcd;
-margin-top:12px;
-	height: auto; /* adjust for content height */
-	opacity: 1;
+/* Let's trigger a clean line border in our header when active */
+.wp-block-wpe-code-dropdown:has(.task-panel.active) .task-header {
+    border-bottom-color: #f1f5f9;
 }
 
+/* Elegant Code Block Nesting */
 .panel-content {
-	margin-top: 1em;
-	margin-bottom: 1em;
-	padding:0 .5rem;
+    padding: 20px;
+    margin: 0;
+    background: #fafafa; /* Minimal code containment deck */
+    border-bottom: 1px solid #f1f5f9;
+
+    /* Strips default margins from pre/code elements inside */
+    pre, code {
+        margin: 0;
+        font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        font-size: 0.95rem;
+        background: transparent;
+        padding: 0;
+    }
 }
 
-.task-footer {
-	display: flex;
-	justify-content: end;
-	align-items: end;
+/* 5. Clean Component Footer */
+.code-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 12px 20px;
+    background: transparent;
+
+    button {
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        transition: background 0.2s ease, transform 0.1s ease;
+
+        &:hover {
+            background: #1e293b;
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+        
+        &.is-completed {
+            background: #10b981 !important;
+            color: white !important;
+        }
+    }
 }
 
-.task-footer p {
-	margin: 0;
-	font-size: 0.9em;
-	color: #555;
+/* Animations Keyframes */
+@keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
-
-.task-footer button {
-	background: black;
-	color: #fff;
-	border: none;
-	border-radius: 100px;
-	padding: 8px 12px;
-	cursor: pointer;
-	transition: background 0.3s ease;
-}
-
-.task-footer button:hover {
-	color: #e1e1e1;
-	transform: (scale 1.05);
-}
-
-.task-comment label {
-	display: block;
-	margin-bottom: 0.5em;
-	font-weight: bold;
-}
-.task-comment textarea {
-	width: 98%;
-	min-height: 80px;
-	padding: 0.5em;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	resize: vertical;
-}
-.task-comment textarea:focus {
-	border-color: #2979fb;
-	outline: none;
-	box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
-}
-.comments-wrapper {
-	padding:1rem;
-	border:#ccc 1px dashed;
-	border-radius: 8px;
-	margin:1rem;
-}
-.task-comment {
-	margin-top: 1em;
-	display:flex;
-	flex-direction: column;
-	justify-content: space-between;
-	height: 0;
-	opacity: 0;
-	overflow: hidden;
-	transition: height 0.33s ease, opacity 0.25s ease;
-}
-
-.task-comment.animate {
-	height: auto; /* adjust for content height */
-	opacity: 1;
-}
-.comments-wrapper h3 {
-	margin: 0;
-}
-.task-comments p {
-	padding: 0.5em;
-	border-radius: 4px;
-}
-.comments-wrapper button {
-	margin-top: 0.5em;
-	background: #00b2ff;
-	color: #fff;
-	border: none;
-	border-radius: 100px;
-	padding: 6px 10px;
-	cursor: pointer;
-	transition: background 0.3s ease;
-}
-
-.task-block-editor {
-
-  // Style first inner block (title)
-  > .block-editor-inner-blocks
-  > .block-editor-block-list__layout
-  > *:first-child {
-    border-bottom: 2px dashed #cdcdcd;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-  }
-
-  // Optional: style detail area
-  > .block-editor-inner-blocks
-  > .block-editor-block-list__layout
-  > *:not(:first-child) {
-    opacity: 0.95;
-  }
-}
-
-
-/* Task Completion Styles */
-button.is-completed {
-    background: #4caf50 !important;
-		border-color: #4caf50 !important;
-    color: white !important;
-}
-.task-block.complete {
-    border-left: 5px solid #4caf50;
-}
-
-
-
-
-
-

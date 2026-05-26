@@ -51,57 +51,39 @@ const { state } = store('wpe', {
      * Copy function utilizing Interactivity API's getElement()
      */
     async copyToClipboard() {
-      // DEBUG LOG 1: Check if the action is firing at all
-      console.log('1. copyToClipboard action triggered!');
-      
       const context = getContext();
-      console.log('Current context state:', context);
-      
-      try {
-        const { ref: buttonElement } = getElement();
-        console.log('2. Clicked Button Element:', buttonElement);
-        
-        const blockElement = buttonElement.closest('[data-wp-interactive="wpe"]');
-        console.log('3. Found Parent Block Wrapper:', blockElement);
-        
-        // Let's look for your actual content area
-        const contentContainer = blockElement?.querySelector('.panel-content');
-        console.log('4. Target Content Container:', contentContainer);
+      const { ref: buttonElement } = getElement();
+      const blockElement = buttonElement.closest('[data-wp-interactive="wpe"]');
+      const contentContainer = blockElement?.querySelector('.panel-content');
 
-        if (!contentContainer) {
-          console.error('CRITICAL: .panel-content was not found in the DOM.');
-          return;
+      if (contentContainer) {
+        try {
+          const textToCopy = contentContainer.textContent || contentContainer.innerText;
+          const cleanedText = textToCopy.trim();
+
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(cleanedText);
+          } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = cleanedText;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+          }
+
+          // Trigger visual icon change state
+          context.isCopied = true;
+
+          // Revert icon back to normal after 2 seconds
+          setTimeout(() => {
+            context.isCopied = false;
+          }, 2000);
+
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
         }
-
-        const textToCopy = contentContainer.textContent || contentContainer.innerText;
-        const cleanedText = textToCopy.trim();
-        console.log('5. Text extracted for copying:', cleanedText);
-
-        // Clipboard operations
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(cleanedText);
-        } else {
-          const textarea = document.createElement('textarea');
-          textarea.value = cleanedText;
-          textarea.style.position = 'fixed';
-          document.body.appendChild(textarea);
-          textarea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textarea);
-        }
-
-        // Change UI text
-        console.log('6. Attempting to change context.copyText to "Copied!"');
-        const originalText = context.copyText || 'Copy';
-        context.copyText = 'Copied!';
-
-        setTimeout(() => {
-          context.copyText = originalText;
-          console.log('7. Resetting copy text back to:', originalText);
-        }, 2000);
-
-      } catch (err) {
-        console.error('An error occurred during execution:', err);
       }
     },
   },
@@ -128,7 +110,7 @@ const { state } = store('wpe', {
       }
 
       context.isComplete = state.tasks[context.id] ?? false;
-      context.copyText = 'Copy';
+      context.isCopied = false; // Initialized tracking variable
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
     },
   },
