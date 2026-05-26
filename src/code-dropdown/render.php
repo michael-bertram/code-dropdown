@@ -19,6 +19,8 @@ foreach ( $inner_blocks as $inner_block ) {
 }
 ?>
 
+
+
 <div
     data-wp-interactive="wpe"
     data-wp-init="callbacks.initTask"
@@ -32,14 +34,19 @@ foreach ( $inner_blocks as $inner_block ) {
         'toggleText'  => '+',
         'isComplete' => false,
         'completeText' => esc_html__( 'Done', 'code-dropdown' ),
+        'copyText' => esc_html__( 'Copy', 'code-dropdown' ), // Add this
     )); ?>
 >
     <div class="task-header">
         <?php echo ! empty( $title_html ) ? $title_html : 'Add a title'; ?>
 
+        <button class="copy-button" data-wp-on--click="actions.copyToClipboard">
+            <span data-wp-text="context.copyText"></span>
+        </button>
+
         <button data-wp-on--click="actions.toggleOpen">
-    <span data-wp-text="context.toggleText"></span>
-</button>
+            <span data-wp-text="context.toggleText"></span>
+        </button>
     </div>
 
     <div
