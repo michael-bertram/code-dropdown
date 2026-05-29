@@ -38,8 +38,8 @@ foreach ( $inner_blocks as $inner_block ) {
     )); ?>
 >
     <div class="code-header">
-        <div class="task-title-container">
-            <div class="task-title">
+        <div class="code-title-container">
+            <div class="code-title">
                 <?php echo ! empty( $title_html ) ? $title_html : 'Add a title'; ?>
             </div>
             

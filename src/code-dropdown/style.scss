@@ -28,7 +28,6 @@
         color: #f4f4f5;
 
         .code-header {
-            background: transparent;
             border-bottom-color: #2e2e2e;
         }
 
@@ -190,7 +189,7 @@
 }
 
 /* Align title and badge side-by-side */
-.task-title-container {
+.code-title-container {
     display: flex;
     align-items: center;
     gap: 12px;

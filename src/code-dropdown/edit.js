@@ -21,7 +21,7 @@ export default function Edit({ attributes, setAttributes }) {
 
     return (
         <>
-            {/* Sidebar Controls Panel Settings */}
+            {/* Sidebar Controls Settings */}
             <InspectorControls>
                 <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={true}>
                     <ToggleControl
@@ -42,20 +42,17 @@ export default function Edit({ attributes, setAttributes }) {
 
             {/* Structured Editor Canvas Container */}
             <div {...blockProps}>
-                {/* 1. Header Layout Mock Layer */}
-                <div className="editor-header-wrapper">
-                    <span className="header-hint-label">{__('Header / Title', 'code-dropdown')}</span>
+                {/* We put the badge *inside* the inner blocks container.
+                  Using CSS Flexbox, we will arrange the layout order perfectly!
+                */}
+                <div className="editor-combined-container">
                     
-                    {/* Live Badge Display on the right */}
                     {showLanguageBadge && (
                         <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
                             {codeLanguage}
                         </span>
                     )}
-                </div>
 
-                {/* 2. Unified Nested Blocks Layout Stream */}
-                <div className="editor-inner-blocks-container">
                     <InnerBlocks 
                         allowedBlocks={['wpe/code-header', 'wpe/code-content']}
                         template={[

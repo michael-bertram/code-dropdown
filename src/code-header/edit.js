@@ -1,11 +1,20 @@
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { useBlockProps, RichText } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 
-const TITLE = [['core/heading', { placeholder: 'Filename', level: 4 }]];
+export default function Edit({ attributes, setAttributes }) {
+    const blockProps = useBlockProps({ 
+        className: 'task-content-editor' 
+    });
 
-export default function Edit() {
-  return (
-    <div {...useBlockProps({ className: 'task-content-editor' })}>
-      <InnerBlocks template={TITLE} templateLock={false} placeholder="Task title" />
-    </div>
-  );
+    return (
+        <div {...blockProps}>
+            <RichText
+                tagName="h3" // Renders an <h3> tag on the page
+                value={attributes.content} // Binds to your blocks attribute
+                onChange={(value) => setAttributes({ content: value })}
+                placeholder={__('Add Filename', 'code-dropdown')} // Works immediately, every time
+                allowedFormats={[]} // Empty array disables bold/italics formatting popups for clean plain text
+            />
+        </div>
+    );
 }

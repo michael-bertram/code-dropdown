@@ -3,7 +3,7 @@
   "name": "wpe/code-header",
   "title": "Code Header",
   "category": "widgets",
-  "icon": "editor-textcolor",
+  "icon": "heading",
   "parent": ["wpe/code-dropdown"],
   "supports": {
     "html": false

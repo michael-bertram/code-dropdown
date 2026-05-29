@@ -1,58 +1,47 @@
-/* Editor canvas correction engine */
 .wp-block-wpe-code-dropdown-editor {
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    padding: 0;
     margin: 1.5rem 0;
+    position: relative;
 
-    /* Header Decorator Label Area */
-    .editor-header-wrapper {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #f8fafc;
-        padding: 8px 16px;
-        border-bottom: 1px dashed #e2e8f0;
+    .editor-combined-container {
+        position: relative;
         
-        .header-hint-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 0.05em;
-        }
-
-        .code-badge {
-            margin: 0;
-            flex-shrink: 0; /* Prevents text from turning vertical or getting squished */
-        }
-    }
-
-    /* Target Gutenberg's Inner block layouts sequentially */
-    .editor-inner-blocks-container {
-        
-        // This targets the block list wrapper inside the editor canvas
+        /* This is the wrapper Gutenberg generates for the inner blocks */
         .block-editor-block-list__layout {
+            display: flex;
+            flex-direction: column;
             padding: 0 !important;
             margin: 0 !important;
 
-            /* Child Block 1: The Title Input */
+            /* 1. Force the Header block to the top room */
             > *:first-child {
-                padding: 16px 20px;
-                background: #ffffff;
+                order: 1; 
+                background: #f8fafc; /* Beautiful header block background color */
+                padding: 16px 60px 16px 20px; /* Leave padding on the right for badge */
                 margin: 0 !important;
+                border-bottom: 1px solid #f1f5f9;
             }
 
-            /* Child Block 2: The Code Content input panel */
+            /* 2. Force the Content block to follow below */
             > *:last-child {
+                order: 3;
                 padding: 20px;
-                background: #fafafa; /* Darker back-drop code deck matching frontend */
-                border-top: 1px solid #f1f5f9;
+                background: #fafafa;
                 margin: 0 !important;
             }
         }
+    }
+
+    /* 3. Float the badge safely into position on the top-right */
+    .code-badge {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 10; /* Places it cleanly above the header edit field input box */
+        pointer-events: none; /* Allows you to click "through" it to edit text underneath if needed */
     }
 }
