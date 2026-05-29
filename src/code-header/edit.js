@@ -12,7 +12,7 @@ export default function Edit({ attributes, setAttributes }) {
                 tagName="h3" // Renders an <h3> tag on the page
                 value={attributes.content} // Binds to your blocks attribute
                 onChange={(value) => setAttributes({ content: value })}
-                placeholder={__('Add Filename', 'code-dropdown')} // Works immediately, every time
+                placeholder={__('Add Filename', 'code-dropdown')} 
                 allowedFormats={[]} // Empty array disables bold/italics formatting popups for clean plain text
             />
         </div>
