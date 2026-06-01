@@ -1,9 +1,10 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
+import { useSelect } from '@wordpress/data'; // Added to pull live inner block content
 import './editor.scss';
 
-export default function Edit({ attributes, setAttributes }) {
+export default function Edit({ attributes, setAttributes, clientId }) {
     const { 
         showLanguageBadge, 
         codeLanguage, 
@@ -11,12 +12,36 @@ export default function Edit({ attributes, setAttributes }) {
         isCompact,
         maxHeight,
         showLineNumbers,
-        fontSize // Pulled attribute back in
+        fontSize 
     } = attributes;
 
+    // 1. Grab the live text data inside the child wpe/code-content block dynamically
+    const innerCodeText = useSelect((select) => {
+        const { getBlocks } = select('core/block-editor');
+        const innerBlocks = getBlocks(clientId);
+        
+        // Find our code content child block
+        const contentBlock = innerBlocks.find(block => block.name === 'wpe/code-content');
+        
+        // Return the code attribute string if it exists
+        return contentBlock?.attributes?.code || '';
+    }, [clientId]);
+
+    // 2. JavaScript Line & Character Analytics Counter Engine
+    const cleanRawText = innerCodeText.replace(/<[^>]*>/g, ''); // Strip any rich text HTML tags
+    const characterCount = cleanRawText.length;
+    
+    // Split lines by line breaks. If empty text, default to 1 row.
+    const linesArray = cleanRawText.split('\n');
+    const lineCount = innerCodeText ? linesArray.length : 1;
+
+    // 3. Setup dynamic inline styles to pass custom variables to editor container
     const blockProps = useBlockProps({
-        className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''}`,
-        style: { '--editor-code-font-size': fontSize } // Binds the editor canvas view live
+        className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''} ${showLineNumbers ? 'has-line-numbers' : ''}`,
+        style: { 
+            '--editor-code-font-size': fontSize,
+            '--panel-max-height': maxHeight
+        }
     });
 
     const maxHeightOptions = [
@@ -26,7 +51,6 @@ export default function Edit({ attributes, setAttributes }) {
         { label: 'Tall (600px)', value: '600px' },
     ];
 
-    // Sizing Array profiles
     const fontSizeOptions = [
         { label: 'Small (12px)', value: '12px' },
         { label: 'Normal (14px)', value: '14px' },
@@ -80,7 +104,6 @@ export default function Edit({ attributes, setAttributes }) {
                         options={maxHeightOptions}
                         onChange={(value) => setAttributes({ maxHeight: value })}
                     />
-                    {/* Added Font Size selector control back to the layout flow */}
                     <SelectControl
                         label={__('Code Font Size', 'code-dropdown')}
                         value={fontSize}
@@ -91,19 +114,38 @@ export default function Edit({ attributes, setAttributes }) {
             </InspectorControls>
 
             <div {...blockProps}>
-                <div className="editor-combined-container">
-                    {showLanguageBadge && (
-                        <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
-                            {codeLanguage}
-                        </span>
-                    )}
+            {/* Move the language badge wrapper clean out of the code flex alignment zone */}
+            <div className="editor-combined-container">
+                {showLanguageBadge && (
+                    <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
+                        {codeLanguage}
+                    </span>
+                )}
+                
+                <div 
+                    className="editor-inner-blocks-wrapper" 
+                    data-show-lines={showLineNumbers}
+                    data-line-count={lineCount}
+                    style={{ '--panel-max-height': maxHeight }}
+                >
                     <InnerBlocks 
                         allowedBlocks={['wpe/code-header', 'wpe/code-content']}
                         template={[['wpe/code-header', {}], ['wpe/code-content', {}]]}
                         templateLock="all"
                     />
                 </div>
+
+                {/* Live Editor Analytics Meta Footer Status Info bar */}
+                <div className="code-footer">
+                    <div className="code-analytics-meta">
+                        <span>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
+                        <span className="meta-divider">•</span>
+                        <span>{characterCount.toLocaleString()} chars</span>
+                    </div>
+                </div>
+
             </div>
-        </>
+        </div>
+    </>
     );
 }

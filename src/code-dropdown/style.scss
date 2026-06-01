@@ -419,52 +419,93 @@ a:focus {
 }
 
 /* ==========================================================================
-   7. BACKEND BLOCK EDITOR SPECIFIC CANVAS RECONFIGURATIONS
+   BACKEND EDITOR PANEL EXCLUSIVE LAYOUTS
    ========================================================================== */
 .wp-block-wpe-code-dropdown-editor {
     position: relative;
+    box-sizing: border-box;
 
     .editor-combined-container {
         position: relative;
         width: 100%;
-        
-        /* Targets Gutenberg's internal child rendering layout branch wrapper */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Target our new custom inner block wrapper layer */
+    .editor-inner-blocks-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+
+        /* Targets Gutenberg's native child block rendering element list */
         .block-editor-block-list__layout {
             display: flex !important;
             flex-direction: column !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 100%;
 
-            /* Child Block 1: Code Header (Forces into upper position) */
+            /* Child Block 1: The Title Header Block Area */
             > *:first-child {
                 order: 1 !important; 
-                background: #f8fafc;
+                background: transparent;
                 padding: 16px 60px 16px 20px !important; 
                 margin: 0 !important;
                 border-bottom: 1px solid #f1f5f9;
                 width: 100%;
                 box-sizing: border-box;
+                z-index: 2;
             }
 
-            /* Child Block 2: Code Content Panel (Forces below the header) */
+            /* Child Block 2: The Core Code Text Snippet Area Box */
             > *:last-child {
-                order: 3 !important;
-                padding: 20px !important;
+                order: 2 !important;
+                padding: 20px 20px 20px 20px !important;
                 background: #fafafa;
                 margin: 0 !important;
                 width: 100%;
                 box-sizing: border-box;
+                position: relative;
+                
+                /* Apply our max height scrolling parameters exclusively to this element row */
+                max-height: var(--panel-max-height, none) !important;
+                overflow-y: auto;
+                overflow-x: hidden;
             }
         }
     }
 
-    /* Floats the Editor Live Badge context cleanly to top-right corner of card */
+    /* Dark Mode adaptation tweaks to override editor block canvases cleanly */
+    &.dark-theme {
+        .editor-inner-blocks-wrapper .block-editor-block-list__layout > *:last-child {
+            background: #151515 !important;
+
+            ::before {
+                background: #1a1a1a !important;
+                border-right-color: #2e2e2e !important;
+            }
+        }
+        
+        .code-footer {
+            border-top-color: #2e2e2e !important;
+            background: transparent !important;
+        }
+    }
+
+    /* Floats Editor Badge context safely out of the typography layout stream */
     .code-badge {
         position: absolute;
         top: 18px;
         right: 16px;
         z-index: 10;
-        pointer-events: none; 
+        pointer-events: none;
+    }
+
+    .code-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #f1f5f9;
     }
 }
 
