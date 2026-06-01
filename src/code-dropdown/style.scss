@@ -25,9 +25,10 @@
         }
     }
 
-    /* Dynamic Font Size System Variable */
-    pre, code, textarea, [data-placeholder] {
+    /* UNIFIED CASCADING FONT SYSTEM (FIXED SPECIFICITY) */
+    pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .panel-content * {
         font-size: var(--code-font-size, var(--editor-code-font-size, 14px)) !important;
+        line-height: 1.5 !important;
     }
 
     /* ----------------------------------------------------------------------
@@ -38,20 +39,20 @@
         border-color: #2e2e2e !important;
         color: #f4f4f5 !important;
 
-        /* FIX: Force child blocks and rich text input containers to go dark */
+        /* Force child blocks and rich text input containers to go dark */
         .wp-block-wpe-code-header,
         .wp-block-wpe-code-content,
         .task-title-editor-hint,
         .block-editor-rich-text__editable,
         pre, code, div {
-            background: transparent !important; /* Strips the rogue white backgrounds */
-            color: #f4f4f5 !important; /* Forces text to a clear, legible white */
+            background: transparent !important; 
+            color: #f4f4f5 !important; 
         }
 
         /* Fix placeholder text readability in dark mode */
         [data-placeholder]::before,
         .block-editor-rich-text__editable:empty::before {
-            color: #71717a !important; /* Gives placeholders a readable muted gray tone */
+            color: #71717a !important; 
             -webkit-text-fill-color: #71717a !important;
         }
 
@@ -64,16 +65,30 @@
             }
         }
 
-        /* Keep the main code block deck slightly darker than the header deck */
-        .editor-combined-container .block-editor-block-list__layout > *:last-child,
+        /* Dark-mode terminal backdrop tone */
+        .panel-content-flex-wrapper {
+            background: #151515 !important;
+        }
+
         .panel-content {
-            background: #121212 !important; /* Premium dark-mode terminal backdrop tone */
-            border-top: 1px solid #2e2e2e !important;
+            background: transparent !important;
+            border-bottom-color: #2e2e2e !important;
             
             pre, code, div {
                 color: #e4e4e7 !important;
                 background: transparent !important;
             }
+        }
+
+        .line-numbers-gutter {
+            background: #1a1a1a !important;
+            border-right-color: #2e2e2e !important;
+            color: #4b5563 !important;
+        }
+
+        .code-analytics-meta {
+            color: #a1a1aa !important;
+            .meta-divider { color: #3f3f46; }
         }
 
         .copy-button,
@@ -94,11 +109,15 @@
 
     &.is-compact {
         .code-header {
-            padding: 6px 12px !important; /* Tight internal alignment padding */
+            padding: 6px 12px !important; 
         }
 
         .panel-content {
             padding: 8px 12px !important;
+        }
+
+        .line-numbers-gutter {
+            padding: 8px 10px 8px 12px !important;
         }
 
         .code-footer {
@@ -206,25 +225,13 @@ a:focus {
 }
 
 /* Custom Color Palettes Per Language */
-.code-badge.lang-php {
-    background: #eef2ff;
-    color: #4f46e5;
-}
-.code-badge.lang-js {
-    background: #fef9c3;
-    color: #854d0e;
-}
-.code-badge.lang-css {
-    background: #ecfdf5;
-    color: #047857;
-}
-.code-badge.lang-html {
-    background: #fff7ed;
-    color: #c2410c;
-}
+.code-badge.lang-php { background: #eef2ff; color: #4f46e5; }
+.code-badge.lang-js { background: #fef9c3; color: #854d0e; }
+.code-badge.lang-css { background: #ecfdf5; color: #047857; }
+.code-badge.lang-html { background: #fff7ed; color: #c2410c; }
 
 /* ==========================================================================
-   4. COLLAPSIBLE DRAWER BODY (PANEL & DECK CONTENT)
+   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE
    ========================================================================== */
 .code-panel {
     display: flex;
@@ -240,11 +247,45 @@ a:focus {
     }
 }
 
+/* Max-Height Scroll Limiter Panel Setup */
+.panel-scroll-container {
+    max-height: var(--panel-max-height, none);
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
+/* Flex arrangement to hold gutter alongside the code content */
+.panel-content-flex-wrapper {
+    display: flex;
+    align-items: stretch;
+    background: #fafafa;
+}
+
+/* Line Number Gutter Column */
+.line-numbers-gutter {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    padding: 20px 10px 20px 16px;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+    user-select: none;
+    color: #94a3b8;
+    min-width: 28px;
+
+    span {
+        display: block;
+        font-family: 'Fira Code', Consolas, Monaco, monospace;
+    }
+}
+
 .panel-content {
     padding: 20px;
     margin: 0;
-    background: #fafafa; /* Subtle inner code containment fill */
     border-bottom: 1px solid #f1f5f9;
+    flex-grow: 1;
 
     pre, code, .task-content {
         margin: 0;
@@ -252,6 +293,14 @@ a:focus {
         background: transparent;
         padding: 0;
         white-space: pre-wrap;
+    }
+}
+
+/* Adjust main content padding when gutter is attached */
+.has-line-numbers {
+    .panel-content {
+        padding-left: 16px !important;
+        border-left: none;
     }
 }
 
@@ -278,18 +327,30 @@ a:focus {
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         transition: background 0.2s ease, transform 0.1s ease;
 
-        &:hover {
-            background: #1e293b;
-        }
-
-        &:active {
-            transform: scale(0.98);
-        }
+        &:hover { background: #1e293b; }
+        &:active { transform: scale(0.98); }
         
         &.is-completed {
             background: #10b981 !important;
             color: white !important;
         }
+    }
+}
+
+/* Footer Metadata Counters */
+.code-analytics-meta {
+    margin-right: auto; /* Pushes complete button to far right */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+
+    .meta-divider {
+        color: #cbd5e1;
     }
 }
 
@@ -301,7 +362,6 @@ a:focus {
     border: #ccc 1px dashed;
     border-radius: 8px;
     margin: 1rem;
-
     h3 { margin: 0; }
 
     button {
@@ -404,7 +464,7 @@ a:focus {
         top: 18px;
         right: 16px;
         z-index: 10;
-        pointer-events: none; /* Allows editing selections directly through badge layer */
+        pointer-events: none; 
     }
 }
 
@@ -414,84 +474,4 @@ a:focus {
 @keyframes popIn {
     0% { transform: scale(0.7); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
-}
-
-/* Max-Height Scroll Limiter Panel Setup */
-.panel-scroll-container {
-    max-height: var(--panel-max-height, none);
-    overflow-y: auto;
-    overflow-x: hidden;
-    width: 100%;
-    position: relative;
-}
-
-/* Flex arrangement to hold gutter alongside the code content */
-.panel-content-flex-wrapper {
-    display: flex;
-    align-items: stretch;
-    background: #fafafa;
-}
-
-/* Line Number Gutter Column */
-.line-numbers-gutter {
-    display: flex;
-    flex-direction: column;
-    text-align: right;
-    padding: 20px 10px 20px 16px;
-    background: #f1f5f9;
-    border-right: 1px solid #e2e8f0;
-    user-select: none;
-    color: #94a3b8;
-    min-width: 28px;
-
-    span {
-        font-family: 'Fira Code', Consolas, Monaco, monospace;
-        font-size: 0.95rem;
-        line-height: 1.5; /* Keeps line height synchronized with code content */
-    }
-}
-
-/* Adjust main content padding when gutter is attached */
-.has-line-numbers {
-    .panel-content {
-        padding-left: 16px !important;
-        border-left: none;
-        flex-grow: 1;
-    }
-}
-
-/* Footer Metadata Counters */
-.code-analytics-meta {
-    margin-right: auto; /* Pushes button to far right */
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-
-    .meta-divider {
-        color: #cbd5e1;
-    }
-}
-
-/* Dark Theme Gutter & Meta Compliance */
-.wp-block-wpe-code-dropdown.dark-theme,
-.wp-block-wpe-code-dropdown-editor.dark-theme {
-    .panel-content-flex-wrapper {
-        background: #151515 !important;
-    }
-
-    .line-numbers-gutter {
-        background: #1a1a1a !important;
-        border-right-color: #2e2e2e !important;
-        color: #4b5563 !important;
-    }
-
-    .code-analytics-meta {
-        color: #a1a1aa !important;
-        .meta-divider { color: #3f3f46; }
-    }
 }

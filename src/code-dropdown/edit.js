@@ -10,11 +10,13 @@ export default function Edit({ attributes, setAttributes }) {
         isDarkMode, 
         isCompact,
         maxHeight,
-        showLineNumbers 
+        showLineNumbers,
+        fontSize // Pulled attribute back in
     } = attributes;
 
     const blockProps = useBlockProps({
         className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''}`,
+        style: { '--editor-code-font-size': fontSize } // Binds the editor canvas view live
     });
 
     const maxHeightOptions = [
@@ -24,10 +26,17 @@ export default function Edit({ attributes, setAttributes }) {
         { label: 'Tall (600px)', value: '600px' },
     ];
 
+    // Sizing Array profiles
+    const fontSizeOptions = [
+        { label: 'Small (12px)', value: '12px' },
+        { label: 'Normal (14px)', value: '14px' },
+        { label: 'Medium (16px)', value: '16px' },
+        { label: 'Large (18px)', value: '18px' },
+    ];
+
     return (
         <>
             <InspectorControls>
-                {/* Language Management Panel */}
                 <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={true}>
                     <ToggleControl
                         label={__('Show Language Badge', 'code-dropdown')}
@@ -49,7 +58,6 @@ export default function Edit({ attributes, setAttributes }) {
                     )}
                 </PanelBody>
 
-                {/* New Expanded Layout Optimization Panel */}
                 <PanelBody title={__('Design & Layout', 'code-dropdown')} initialOpen={true}>
                     <ToggleControl
                         label={__('Use Dark Theme', 'code-dropdown')}
@@ -71,6 +79,13 @@ export default function Edit({ attributes, setAttributes }) {
                         value={maxHeight}
                         options={maxHeightOptions}
                         onChange={(value) => setAttributes({ maxHeight: value })}
+                    />
+                    {/* Added Font Size selector control back to the layout flow */}
+                    <SelectControl
+                        label={__('Code Font Size', 'code-dropdown')}
+                        value={fontSize}
+                        options={fontSizeOptions}
+                        onChange={(value) => setAttributes({ fontSize: value })}
                     />
                 </PanelBody>
             </InspectorControls>
