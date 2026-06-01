@@ -34,7 +34,15 @@
         "isCompact": {
             "type": "boolean",
             "default": false
-        }
+        },
+		"maxHeight": {
+			"type": "string",
+			"default": "none"
+		},
+		"showLineNumbers": {
+			"type": "boolean",
+			"default": false
+		}
     },
     "textdomain": "code-dropdown",
     "editorScript": "file:./index.js",
