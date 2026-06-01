@@ -1,47 +1,180 @@
+/* ==========================================================================
+   BACKEND EDITOR PANEL EXCLUSIVE SEAMLESS LAYOUTS
+   ========================================================================== */
 .wp-block-wpe-code-dropdown-editor {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     margin: 1.5rem 0;
-    position: relative;
 
     .editor-combined-container {
         position: relative;
-        
-        /* This is the wrapper Gutenberg generates for the inner blocks */
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* UNIFIED CASCADING FONT SYSTEM FOR BACKEND CANVAS */
+    pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .block-editor-inner-blocks * {
+        font-size: var(--editor-code-font-size, 14px) !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ----------------------------------------------------------------------
+       GRID LAYOUT STRUCTURE ENGINE (FIXES THE DOUBLE-INNERBLOCK BREAKDOWN)
+       ---------------------------------------------------------------------- */
+    .editor-grid-sub-container {
+        display: flex;
+        position: relative;
+        width: 100%;
+        background: #fafafa;
+
+        /* Strip WordPress defaults out of the inner block wrapper */
+        .block-editor-inner-blocks {
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        /* Target Gutenberg's core layout element tree list */
         .block-editor-block-list__layout {
-            display: flex;
-            flex-direction: column;
+            display: grid !important;
+            grid-template-columns: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 100%;
 
-            /* 1. Force the Header block to the top room */
+            /* Row Section 1: The Code Header Title Box */
             > *:first-child {
-                order: 1; 
-                background: #f8fafc; /* Beautiful header block background color */
-                padding: 16px 60px 16px 20px; /* Leave padding on the right for badge */
+                grid-row: 1 !important;
+                background: #ffffff;
+                padding: 16px 60px 16px 20px !important; 
                 margin: 0 !important;
                 border-bottom: 1px solid #f1f5f9;
+                box-sizing: border-box;
+                width: 100%;
             }
 
-            /* 2. Force the Content block to follow below */
+            /* Row Section 2: The Scrollable Code Snippet Area */
             > *:last-child {
-                order: 3;
-                padding: 20px;
-                background: #fafafa;
+                grid-row: 2 !important;
+                padding: 20px !important;
                 margin: 0 !important;
+                box-sizing: border-box;
+                width: 100%;
+                
+                /* Locks scroll fields seamlessly strictly to code area rows */
+                max-height: var(--panel-max-height, none) !important;
+                overflow-y: auto;
+                overflow-x: hidden;
             }
         }
     }
 
-    /* 3. Float the badge safely into position on the top-right */
+    /* Gutter Placement Mechanics */
+    .line-numbers-gutter {
+        display: flex;
+        flex-direction: column;
+        text-align: right;
+        padding: 85px 10px 20px 16px !important; /* Offset by 85px to push numbers clean below the header line! */
+        background: #f1f5f9;
+        border-right: 1px solid #e2e8f0;
+        user-select: none;
+        color: #94a3b8;
+        min-width: 28px;
+        z-index: 5;
+
+        span {
+            display: block;
+            font-family: 'Fira Code', Consolas, Monaco, monospace;
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       DARK THEME EDITOR OVERRIDES 
+       ---------------------------------------------------------------------- */
+    &.dark-theme {
+        background: #1e1e1e !important;
+        border-color: #2e2e2e !important;
+        color: #f4f4f5 !important;
+
+        .editor-grid-sub-container {
+            background: #151515 !important;
+
+            .block-editor-block-list__layout > *:first-child {
+                background: #1e1e1e !important;
+                border-bottom-color: #2e2e2e !important;
+            }
+        }
+
+        .line-numbers-gutter {
+            background: #1a1a1a !important;
+            border-right-color: #2e2e2e !important;
+            color: #4b5563 !important;
+        }
+
+        .wp-block-wpe-code-header,
+        .wp-block-wpe-code-content,
+        .block-editor-rich-text__editable,
+        pre, code, div {
+            background: transparent !important;
+            color: #f4f4f5 !important;
+        }
+
+        .code-footer {
+            border-top-color: #2e2e2e !important;
+            background: transparent !important;
+        }
+
+        .code-analytics-meta {
+            color: #a1a1aa !important;
+            .meta-divider { color: #3f3f46; }
+        }
+    }
+
+    /* ----------------------------------------------------------------------
+       COMPACT LAYOUT OVERRIDES 
+       ---------------------------------------------------------------------- */
+    &.is-compact {
+        .editor-grid-sub-container {
+            .block-editor-block-list__layout {
+                > *:first-child {
+                    padding: 8px 60px 8px 20px !important; 
+                }
+                > *:last-child {
+                    padding: 10px 20px !important; 
+                }
+            }
+        }
+
+        .line-numbers-gutter {
+            padding: 53px 10px 10px 16px !important; /* Shrunk padding offset to match compact dimensions precisely */
+        }
+
+        .code-footer {
+            padding: 6px 20px !important; 
+        }
+    }
+
     .code-badge {
         position: absolute;
-        top: 14px;
+        top: 18px;
         right: 16px;
-        z-index: 10; /* Places it cleanly above the header edit field input box */
-        pointer-events: none; /* Allows you to click "through" it to edit text underneath if needed */
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .code-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #f1f5f9;
+        z-index: 6;
+        background: transparent;
     }
 }
