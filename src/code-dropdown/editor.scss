@@ -1,12 +1,47 @@
-/**
- * The following styles get applied inside the editor only.
- *
- * Replace them with your own styles or remove the file completely.
- */
+.wp-block-wpe-code-dropdown-editor {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin: 1.5rem 0;
+    position: relative;
 
-.wp-block-bigbite-interactive-v6 input[type="text"] {
-	font-size: 1em;
-	color: inherit;
-	background: inherit;
-	border: 0;
+    .editor-combined-container {
+        position: relative;
+        
+        /* This is the wrapper Gutenberg generates for the inner blocks */
+        .block-editor-block-list__layout {
+            display: flex;
+            flex-direction: column;
+            padding: 0 !important;
+            margin: 0 !important;
+
+            /* 1. Force the Header block to the top room */
+            > *:first-child {
+                order: 1; 
+                background: #f8fafc; /* Beautiful header block background color */
+                padding: 16px 60px 16px 20px; /* Leave padding on the right for badge */
+                margin: 0 !important;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            /* 2. Force the Content block to follow below */
+            > *:last-child {
+                order: 3;
+                padding: 20px;
+                background: #fafafa;
+                margin: 0 !important;
+            }
+        }
+    }
+
+    /* 3. Float the badge safely into position on the top-right */
+    .code-badge {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 10; /* Places it cleanly above the header edit field input box */
+        pointer-events: none; /* Allows you to click "through" it to edit text underneath if needed */
+    }
 }

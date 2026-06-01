@@ -1,11 +1,20 @@
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { useBlockProps, RichText } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 
-const CONTENT = [['core/code', { placeholder: 'Add code here...' }]];
+export default function Edit({ attributes, setAttributes }) {
+    const blockProps = useBlockProps({ 
+        className: 'code-content-editor plain-code-editor' 
+    });
 
-export default function Edit() {
-  return (
-    <div {...useBlockProps({ className: 'task-content-editor' })}>
-      <InnerBlocks template={CONTENT} templateLock={false} placeholder="Add code here..." />
-    </div>
-  );
+    return (
+        <div {...blockProps}>
+            <RichText
+                tagName="pre" // Must match the block.json selector
+                value={attributes.code} 
+                onChange={(value) => setAttributes({ code: value })}
+                placeholder={__('Add code here...', 'code-dropdown')}
+                allowedFormats={[]} 
+            />
+        </div>
+    );
 }

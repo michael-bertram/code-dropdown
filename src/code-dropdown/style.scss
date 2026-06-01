@@ -1,5 +1,8 @@
-/* 1. Main Block Container */
-.wp-block-wpe-code-dropdown {
+/* ==========================================================================
+   1. MAIN BLOCK CONTAINERS (SHARED CONFIGURATION)
+   ========================================================================== */
+.wp-block-wpe-code-dropdown,
+.wp-block-wpe-code-dropdown-editor {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     display: flex;
@@ -10,53 +13,133 @@
     overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     transition: background-color 0.3s ease, border-color 0.3s ease;
+    margin: 1.5rem 0;
 
     /* Complete State - Smooth, subtle background shift */
     &.complete {
-        background-color: #f0fdf4;
-        border-color: #bbf7d0;
+        background-color: #f0fdf4 !important;
+        border-color: #bbf7d0 !important;
         
         .code-header h3 {
-            color: #166534;
+            color: #166534 !important;
         }
     }
 
-    /* Dark Theme Support */
+    /* UNIFIED CASCADING FONT SYSTEM (FIXED SPECIFICITY) */
+    pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .panel-content * {
+        font-size: var(--code-font-size, var(--editor-code-font-size, 14px)) !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ----------------------------------------------------------------------
+       DYNAMIC CUSTOM SIDEBAR CONTROLS (DARK THEME & COMPACT SPACING)
+       ---------------------------------------------------------------------- */
     &.dark-theme {
-        background: #1e1e1e;
-        border-color: #2e2e2e;
-        color: #f4f4f5;
+        background: #1e1e1e !important;
+        border-color: #2e2e2e !important;
+        color: #f4f4f5 !important;
+
+        /* Force child blocks and rich text input containers to go dark */
+        .wp-block-wpe-code-header,
+        .wp-block-wpe-code-content,
+        .task-title-editor-hint,
+        .block-editor-rich-text__editable,
+        pre, code, div {
+            background: transparent !important; 
+            color: #f4f4f5 !important; 
+        }
+
+        /* Fix placeholder text readability in dark mode */
+        [data-placeholder]::before,
+        .block-editor-rich-text__editable:empty::before {
+            color: #71717a !important; 
+            -webkit-text-fill-color: #71717a !important;
+        }
 
         .code-header {
-            background: transparent;
-            border-bottom-color: #2e2e2e;
+            background: transparent !important;
+            border-bottom-color: #2e2e2e !important;
+            
+            h3 {
+                color: #f4f4f5 !important;
+            }
+        }
+
+        /* Dark-mode terminal backdrop tone */
+        .panel-content-flex-wrapper {
+            background: #151515 !important;
         }
 
         .panel-content {
-            background: #151515;
-            border: 1px solid #2e2e2e;
+            background: transparent !important;
+            border-bottom-color: #2e2e2e !important;
+            
+            pre, code, div {
+                color: #e4e4e7 !important;
+                background: transparent !important;
+            }
         }
 
-        .copy-button:hover,
-        .toggle-button:hover {
-            background: #2a2a2a;
+        .line-numbers-gutter {
+            background: #1a1a1a !important;
+            border-right-color: #2e2e2e !important;
+            color: #4b5563 !important;
+        }
+
+        .code-analytics-meta {
+            color: #a1a1aa !important;
+            .meta-divider { color: #3f3f46; }
+        }
+
+        .copy-button,
+        .toggle-button {
+            color: #a1a1aa !important;
+
+            &:hover {
+                background: #2a2a2a !important;
+                color: #ffffff !important;
+            }
         }
         
         &.complete {
-            background-color: #062e14;
-            border-color: #14532d;
+            background-color: #062e14 !important;
+            border-color: #14532d !important;
+        }
+    }
+
+    &.is-compact {
+        .code-header {
+            padding: 6px 12px !important; 
+        }
+
+        .panel-content {
+            padding: 8px 12px !important;
+        }
+
+        .line-numbers-gutter {
+            padding: 8px 10px 8px 12px !important;
+        }
+
+        .code-footer {
+            padding: 4px 12px !important;
         }
     }
 }
 
-/* 2. Seamless Header Area */
+a:focus {
+    outline: none;
+}
+
+/* ==========================================================================
+   2. SEAMLESS HEADER LAYOUT AREA
+   ========================================================================== */
 .code-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0px 20px;
-    background: transparent; /* Removed blocky inner background */
-    border-bottom: 1px solid transparent; /* Becomes visible only when open */
+    padding: 16px 20px;
+    background: transparent; 
+    border-bottom: 1px solid transparent; /* Shows only when active/open */
     transition: border-color 0.25s ease;
 
     h3 {
@@ -68,13 +151,21 @@
     }
 }
 
+.code-title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .code-actions {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-/* 3. Action Buttons Configuration */
+/* ----------------------------------------------------------------------
+   HEADER INTERACTION BUTTONS & SVGS
+   ---------------------------------------------------------------------- */
 .copy-button, 
 .toggle-button {
     background: transparent;
@@ -98,13 +189,13 @@
     }
 }
 
-/* Icon Toggling Mechanical States */
+/* Mechanical Icon Swapping Logic States */
 .copy-button {
     .icon-check { display: none; }
     .icon-copy { display: inline-block; }
 
     &.copied {
-        color: #10b981;
+        color: #10b981 !important;
         .icon-copy { display: none; }
         .icon-check {
             display: inline-block;
@@ -113,7 +204,35 @@
     }
 }
 
-/* 4. Collapsible Body Panels (Seamless) */
+/* Trigger a clean border separation divider below the title when panel is active */
+.wp-block-wpe-code-dropdown:has(.code-panel.active) .code-header {
+    border-bottom-color: #f1f5f9;
+}
+
+/* ==========================================================================
+   3. LANGUAGE SYNTAX DISPLAY BADGES
+   ========================================================================== */
+.code-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    background: #e2e8f0;
+    color: #475569;
+    flex-shrink: 0;
+}
+
+/* Custom Color Palettes Per Language */
+.code-badge.lang-php { background: #eef2ff; color: #4f46e5; }
+.code-badge.lang-js { background: #fef9c3; color: #854d0e; }
+.code-badge.lang-css { background: #ecfdf5; color: #047857; }
+.code-badge.lang-html { background: #fff7ed; color: #c2410c; }
+
+/* ==========================================================================
+   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE
+   ========================================================================== */
 .code-panel {
     display: flex;
     flex-direction: column;
@@ -125,35 +244,69 @@
     &.active {
         height: auto;
         opacity: 1;
-        
-        /* Add border to header structurally when open */
-        border-top: none; 
     }
 }
 
-/* Let's trigger a clean line border in our header when active */
-.wp-block-wpe-code-dropdown:has(.task-panel.active) .task-header {
-    border-bottom-color: #f1f5f9;
+/* Max-Height Scroll Limiter Panel Setup */
+.panel-scroll-container {
+    max-height: var(--panel-max-height, none);
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
 }
 
-/* Elegant Code Block Nesting */
+/* Flex arrangement to hold gutter alongside the code content */
+.panel-content-flex-wrapper {
+    display: flex;
+    align-items: stretch;
+    background: #fafafa;
+}
+
+/* Line Number Gutter Column */
+.line-numbers-gutter {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    padding: 20px 10px 20px 16px;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+    user-select: none;
+    color: #94a3b8;
+    min-width: 28px;
+
+    span {
+        display: block;
+        font-family: 'Fira Code', Consolas, Monaco, monospace;
+    }
+}
+
 .panel-content {
     padding: 20px;
     margin: 0;
-    background: #fafafa; /* Minimal code containment deck */
     border-bottom: 1px solid #f1f5f9;
+    flex-grow: 1;
 
-    /* Strips default margins from pre/code elements inside */
-    pre, code {
+    pre, code, .task-content {
         margin: 0;
         font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        font-size: 0.95rem;
         background: transparent;
         padding: 0;
+        white-space: pre-wrap;
     }
 }
 
-/* 5. Clean Component Footer */
+/* Adjust main content padding when gutter is attached */
+.has-line-numbers {
+    .panel-content {
+        padding-left: 16px !important;
+        border-left: none;
+    }
+}
+
+/* ==========================================================================
+   5. COMPONENT LAYOUT FOOTER WORKSPACE
+   ========================================================================== */
 .code-footer {
     display: flex;
     justify-content: flex-end;
@@ -174,13 +327,8 @@
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         transition: background 0.2s ease, transform 0.1s ease;
 
-        &:hover {
-            background: #1e293b;
-        }
-
-        &:active {
-            transform: scale(0.98);
-        }
+        &:hover { background: #1e293b; }
+        &:active { transform: scale(0.98); }
         
         &.is-completed {
             background: #10b981 !important;
@@ -189,7 +337,140 @@
     }
 }
 
-/* Animations Keyframes */
+/* Footer Metadata Counters */
+.code-analytics-meta {
+    margin-right: auto; /* Pushes complete button to far right */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+
+    .meta-divider {
+        color: #cbd5e1;
+    }
+}
+
+/* ==========================================================================
+   6. COMMENTS SUB-SYSTEM COMPONENT SETTINGS
+   ========================================================================== */
+.comments-wrapper {
+    padding: 1rem;
+    border: #ccc 1px dashed;
+    border-radius: 8px;
+    margin: 1rem;
+    h3 { margin: 0; }
+
+    button {
+        margin-top: 0.5em;
+        background: #00b2ff;
+        color: #fff;
+        border: none;
+        border-radius: 100px;
+        padding: 6px 10px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+}
+
+.task-comment {
+    margin-top: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: height 0.33s ease, opacity 0.25s ease;
+
+    &.animate {
+        height: auto;
+        opacity: 1;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5em;
+        font-weight: bold;
+    }
+
+    textarea {
+        width: 98%;
+        min-height: 80px;
+        padding: 0.5em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+
+        &:focus {
+            border-color: #2979fb;
+            outline: none;
+            box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
+        }
+    }
+}
+
+.task-comments p {
+    padding: 0.5em;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   7. BACKEND BLOCK EDITOR SPECIFIC CANVAS RECONFIGURATIONS
+   ========================================================================== */
+.wp-block-wpe-code-dropdown-editor {
+    position: relative;
+
+    .editor-combined-container {
+        position: relative;
+        width: 100%;
+        
+        /* Targets Gutenberg's internal child rendering layout branch wrapper */
+        .block-editor-block-list__layout {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 0 !important;
+            margin: 0 !important;
+
+            /* Child Block 1: Code Header (Forces into upper position) */
+            > *:first-child {
+                order: 1 !important; 
+                background: #f8fafc;
+                padding: 16px 60px 16px 20px !important; 
+                margin: 0 !important;
+                border-bottom: 1px solid #f1f5f9;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Child Block 2: Code Content Panel (Forces below the header) */
+            > *:last-child {
+                order: 3 !important;
+                padding: 20px !important;
+                background: #fafafa;
+                margin: 0 !important;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    }
+
+    /* Floats the Editor Live Badge context cleanly to top-right corner of card */
+    .code-badge {
+        position: absolute;
+        top: 18px;
+        right: 16px;
+        z-index: 10;
+        pointer-events: none; 
+    }
+}
+
+/* ==========================================================================
+   8. INTERACTION SYSTEM KEYFRAME ANIMATIONS
+   ========================================================================== */
 @keyframes popIn {
     0% { transform: scale(0.7); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
