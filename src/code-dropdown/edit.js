@@ -8,36 +8,26 @@ export default function Edit({ attributes, setAttributes }) {
         showLanguageBadge, 
         codeLanguage, 
         isDarkMode, 
-        fontSize, 
-        isCompact 
+        isCompact,
+        maxHeight,
+        showLineNumbers 
     } = attributes;
 
-    // Build the dynamic editor classes based on user sidebar choices
     const blockProps = useBlockProps({
         className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''}`,
-        style: { '--editor-code-font-size': fontSize } // Pass font size down as a CSS variable
     });
 
-    const languageOptions = [
-        { label: 'PHP', value: 'PHP' },
-        { label: 'JavaScript', value: 'JS' },
-        { label: 'CSS', value: 'CSS' },
-        { label: 'HTML', value: 'HTML' },
-        { label: 'Python', value: 'Python' },
-        { label: 'SQL', value: 'SQL' },
-    ];
-
-    const fontSizeOptions = [
-        { label: 'Small (12px)', value: '12px' },
-        { label: 'Normal (14px)', value: '14px' },
-        { label: 'Medium (16px)', value: '16px' },
-        { label: 'Large (18px)', value: '18px' },
+    const maxHeightOptions = [
+        { label: 'No Limit (Scroll disabled)', value: 'none' },
+        { label: 'Short (250px)', value: '250px' },
+        { label: 'Medium (400px)', value: '400px' },
+        { label: 'Tall (600px)', value: '600px' },
     ];
 
     return (
         <>
             <InspectorControls>
-                {/* Panel 1: Original Language Controls */}
+                {/* Language Management Panel */}
                 <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={true}>
                     <ToggleControl
                         label={__('Show Language Badge', 'code-dropdown')}
@@ -48,13 +38,18 @@ export default function Edit({ attributes, setAttributes }) {
                         <SelectControl
                             label={__('Code Language', 'code-dropdown')}
                             value={codeLanguage}
-                            options={languageOptions}
+                            options={[
+                                { label: 'PHP', value: 'PHP' },
+                                { label: 'JavaScript', value: 'JS' },
+                                { label: 'CSS', value: 'CSS' },
+                                { label: 'HTML', value: 'HTML' },
+                            ]}
                             onChange={(value) => setAttributes({ codeLanguage: value })}
                         />
                     )}
                 </PanelBody>
 
-                {/* New Panel 2: Design Styling Layout Controls */}
+                {/* New Expanded Layout Optimization Panel */}
                 <PanelBody title={__('Design & Layout', 'code-dropdown')} initialOpen={true}>
                     <ToggleControl
                         label={__('Use Dark Theme', 'code-dropdown')}
@@ -66,16 +61,20 @@ export default function Edit({ attributes, setAttributes }) {
                         checked={isCompact}
                         onChange={(value) => setAttributes({ isCompact: value })}
                     />
+                    <ToggleControl
+                        label={__('Show Line Numbers', 'code-dropdown')}
+                        checked={showLineNumbers}
+                        onChange={(value) => setAttributes({ showLineNumbers: value })}
+                    />
                     <SelectControl
-                        label={__('Code Font Size', 'code-dropdown')}
-                        value={fontSize}
-                        options={fontSizeOptions}
-                        onChange={(value) => setAttributes({ fontSize: value })}
+                        label={__('Max Panel Height', 'code-dropdown')}
+                        value={maxHeight}
+                        options={maxHeightOptions}
+                        onChange={(value) => setAttributes({ maxHeight: value })}
                     />
                 </PanelBody>
             </InspectorControls>
 
-            {/* Structured Editor Canvas Container */}
             <div {...blockProps}>
                 <div className="editor-combined-container">
                     {showLanguageBadge && (
@@ -85,10 +84,7 @@ export default function Edit({ attributes, setAttributes }) {
                     )}
                     <InnerBlocks 
                         allowedBlocks={['wpe/code-header', 'wpe/code-content']}
-                        template={[
-                            ['wpe/code-header', {}],
-                            ['wpe/code-content', {}]
-                        ]}
+                        template={[['wpe/code-header', {}], ['wpe/code-content', {}]]}
                         templateLock="all"
                     />
                 </div>

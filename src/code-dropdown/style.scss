@@ -415,3 +415,83 @@ a:focus {
     0% { transform: scale(0.7); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+/* Max-Height Scroll Limiter Panel Setup */
+.panel-scroll-container {
+    max-height: var(--panel-max-height, none);
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
+/* Flex arrangement to hold gutter alongside the code content */
+.panel-content-flex-wrapper {
+    display: flex;
+    align-items: stretch;
+    background: #fafafa;
+}
+
+/* Line Number Gutter Column */
+.line-numbers-gutter {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    padding: 20px 10px 20px 16px;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+    user-select: none;
+    color: #94a3b8;
+    min-width: 28px;
+
+    span {
+        font-family: 'Fira Code', Consolas, Monaco, monospace;
+        font-size: 0.95rem;
+        line-height: 1.5; /* Keeps line height synchronized with code content */
+    }
+}
+
+/* Adjust main content padding when gutter is attached */
+.has-line-numbers {
+    .panel-content {
+        padding-left: 16px !important;
+        border-left: none;
+        flex-grow: 1;
+    }
+}
+
+/* Footer Metadata Counters */
+.code-analytics-meta {
+    margin-right: auto; /* Pushes button to far right */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+
+    .meta-divider {
+        color: #cbd5e1;
+    }
+}
+
+/* Dark Theme Gutter & Meta Compliance */
+.wp-block-wpe-code-dropdown.dark-theme,
+.wp-block-wpe-code-dropdown-editor.dark-theme {
+    .panel-content-flex-wrapper {
+        background: #151515 !important;
+    }
+
+    .line-numbers-gutter {
+        background: #1a1a1a !important;
+        border-right-color: #2e2e2e !important;
+        color: #4b5563 !important;
+    }
+
+    .code-analytics-meta {
+        color: #a1a1aa !important;
+        .meta-divider { color: #3f3f46; }
+    }
+}
