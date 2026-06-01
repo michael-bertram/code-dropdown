@@ -3,7 +3,7 @@ import { __ } from '@wordpress/i18n';
 
 export default function Edit({ attributes, setAttributes }) {
     const blockProps = useBlockProps({ 
-        className: 'task-content-editor plain-code-editor' 
+        className: 'code-content-editor plain-code-editor' 
     });
 
     return (

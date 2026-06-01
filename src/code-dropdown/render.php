@@ -1,21 +1,29 @@
 <?php
-$persistent_id = $attributes['id'] ?? '';
-// Pull our newly registered control attributes safely
-$show_badge    = $attributes['showLanguageBadge'] ?? true;
-$code_lang     = $attributes['codeLanguage'] ?? 'PHP';
+$persistent_id     = $attributes['id'] ?? '';
+$show_badge        = $attributes['showLanguageBadge'] ?? true;
+$code_lang         = $attributes['codeLanguage'] ?? 'PHP';
+
+// Restored your original precise block.json naming choices!
+$is_dark           = $attributes['isDarkMode'] ?? false;
+$is_compact        = $attributes['isCompact'] ?? false;
+$font_size         = $attributes['fontSize'] ?? '14px';
 
 if ( empty( $persistent_id ) ) {
     return;
 }
+
+$theme_class   = $is_dark ? 'dark-theme' : '';
+$compact_class = $is_compact ? 'is-compact' : '';
+$inline_styles = sprintf( 'style="--code-font-size: %s;"', esc_attr( $font_size ) );
 
 $inner_blocks = $block->parsed_block['innerBlocks'] ?? [];
 $title_html = '';
 $content_html = '';
 
 foreach ( $inner_blocks as $inner_block ) {
-    if ( 'wpe/code-header' === $inner_block['blockName'] ) {
+    if ( isset($inner_block['blockName']) && 'wpe/code-header' === $inner_block['blockName'] ) {
         $title_html = render_block( $inner_block );
-    } elseif ( 'wpe/code-content' === $inner_block['blockName'] ) {
+    } elseif ( isset($inner_block['blockName']) && 'wpe/code-content' === $inner_block['blockName'] ) {
         $content_html = render_block( $inner_block );
     }
 }
@@ -25,9 +33,12 @@ foreach ( $inner_blocks as $inner_block ) {
     data-wp-interactive="wpe"
     data-wp-init="callbacks.initTask"
     data-wp-class--complete="context.isComplete"
-    <?php echo get_block_wrapper_attributes(); ?>
+    <?php echo $inline_styles; ?>
+    <?php echo get_block_wrapper_attributes( array(
+        'class' => esc_attr( trim( "$theme_class $compact_class" ) )
+    ) ); ?>
     <?php echo wp_interactivity_data_wp_context(array(
-        'id'           => $persistent_id,
+        'id'           => $persistent_id,                     
         'isOpen'       => false,
         'openText'     => '+',
         'closeText'    => '-',
@@ -40,7 +51,10 @@ foreach ( $inner_blocks as $inner_block ) {
     <div class="code-header">
         <div class="code-title-container">
             <div class="code-title">
-                <?php echo ! empty( $title_html ) ? $title_html : 'Add a title'; ?>
+                <?php 
+                // Checks if rendered markup exists; if empty, strips fallback tags gracefully
+                echo ! empty( trim( strip_tags( $title_html ) ) ) ? $title_html : '<h3>Untitled Snippet</h3>'; 
+                ?>
             </div>
             
             <?php if ( true === $show_badge ) : ?>
