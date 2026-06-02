@@ -35,7 +35,7 @@ foreach ( $inner_blocks as $inner_block ) {
 // DYNAMIC FRONTEND LINE & CHARACTER COUNT EXTRACTION
 $line_gutter_html = '';
 $character_count  = 0;
-$line_count       = 1; // Default fallback index value
+$line_count       = 1; 
 
 if ( ! empty( $content_html ) ) {
     // 1. Convert common block markup variations into standard newlines
@@ -46,24 +46,20 @@ if ( ! empty( $content_html ) ) {
     // 2. Extract pure plaintext text strings
     $raw_code_text = strip_tags($clean_breaks);
     
-    // 3. Normalize carriage returns and remove leading/trailing structural spaces
+    // 3. Normalize carriage returns and thoroughly trim the main body string
     $raw_code_text = str_replace("\r", "", $raw_code_text);
-    
-    // CRITICAL UPDATE: Thoroughly trim the main body string before slicing it into an array
     $raw_code_text = trim($raw_code_text);
     $character_count = strlen($raw_code_text);
     
     // 4. Split text into a raw index array
     $lines = explode("\n", $raw_code_text);
     
-    // 5. Trim whitespace and invisible formatting buffers from EVERY individual line
+    // 5. Trim whitespace and invisible formatting buffers from every individual line
     $lines = array_map(function($line) {
-        // Strips spaces, tabs, vertical tabs, and hidden non-breaking spaces
         return trim($line, " \t\n\r\0\x0B\xC2\xA0");
     }, $lines);
     
-    // 6. POP OFF TRAILING EMPTY LINES: Continually remove trailing array items if they are empty
-    // This removes the ghost lines caused by Gutenberg's trailing block updates
+    // 6. Continually remove trailing array items if they are empty (fixes ghost line bugs)
     while (!empty($lines) && end($lines) === '') {
         array_pop($lines);
     }
@@ -80,6 +76,16 @@ if ( ! empty( $content_html ) ) {
         $line_gutter_html .= '</div>';
     }
 }
+
+// Map your custom selector tokens to Prism's expected syntax keywords
+$prism_lang_map = array(
+    'PHP'        => 'php',
+    'JavaScript' => 'javascript',
+    'JS'         => 'javascript',
+    'CSS'        => 'css',
+    'HTML'       => 'markup'
+);
+$selected_lang = $prism_lang_map[$code_lang] ?? 'plaintext';
 ?>
 
 <div
@@ -131,7 +137,7 @@ if ( ! empty( $content_html ) ) {
                 <div class="panel-content-flex-wrapper">
                     <?php echo $line_gutter_html; ?>
                     <div class="panel-content">
-                        <?php echo $content_html; ?>
+                        <pre><code class="language-<?php echo esc_attr($selected_lang); ?>"><?php echo esc_html($raw_code_text); ?></code></pre>
                     </div>
                 </div>
             </div>
