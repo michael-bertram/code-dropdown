@@ -35,28 +35,43 @@ foreach ( $inner_blocks as $inner_block ) {
 // DYNAMIC FRONTEND LINE & CHARACTER COUNT EXTRACTION
 $line_gutter_html = '';
 $character_count  = 0;
-$line_count       = 1; // Default to 1 line minimum
+$line_count       = 1; // Default fallback index value
 
 if ( ! empty( $content_html ) ) {
-    // Convert common HTML block variations to raw breaks before stripping tags
+    // 1. Convert common block markup variations into standard newlines
     $clean_breaks = preg_replace('/<br\s*\/?>/i', "\n", $content_html);
     $clean_breaks = preg_replace('/<\/p><p>/i', "\n", $clean_breaks);
     $clean_breaks = preg_replace('/<\/div><div>/i', "\n", $clean_breaks);
     
-    // Extract pure plaintext text string
+    // 2. Extract pure plaintext text strings
     $raw_code_text = strip_tags($clean_breaks);
     
-    // Normalize Windows carriage returns \r\n to \n
+    // 3. Normalize carriage returns and remove leading/trailing structural spaces
     $raw_code_text = str_replace("\r", "", $raw_code_text);
+    
+    // CRITICAL UPDATE: Thoroughly trim the main body string before slicing it into an array
+    $raw_code_text = trim($raw_code_text);
     $character_count = strlen($raw_code_text);
     
-    // Split text accurately into a single index array
-    if (!empty(trim($raw_code_text))) {
-        $lines = explode("\n", $raw_code_text);
-        $line_count = count($lines);
+    // 4. Split text into a raw index array
+    $lines = explode("\n", $raw_code_text);
+    
+    // 5. Trim whitespace and invisible formatting buffers from EVERY individual line
+    $lines = array_map(function($line) {
+        // Strips spaces, tabs, vertical tabs, and hidden non-breaking spaces
+        return trim($line, " \t\n\r\0\x0B\xC2\xA0");
+    }, $lines);
+    
+    // 6. POP OFF TRAILING EMPTY LINES: Continually remove trailing array items if they are empty
+    // This removes the ghost lines caused by Gutenberg's trailing block updates
+    while (!empty($lines) && end($lines) === '') {
+        array_pop($lines);
     }
+    
+    // Compute the true length of remaining functional rows
+    $line_count = !empty($lines) ? count($lines) : 1;
 
-    // Build line numbers sidebar track column
+    // Generate sequential line gutter spans matching editor layouts exactly
     if ( $show_lines ) {
         $line_gutter_html .= '<div class="line-numbers-gutter" aria-hidden="true">';
         for ( $i = 1; $i <= $line_count; $i++ ) {
