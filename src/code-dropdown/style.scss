@@ -1,199 +1,456 @@
-.wp-block-bigbite-task-block {
-	font-size: 18px;
-	display: flex;
-	flex-direction: column;
-	background: #fdeaea;
-	border-radius: 12px;
-		overflow: hidden;
+/* ==========================================================================
+   1. MAIN BLOCK CONTAINERS (SHARED CONFIGURATION)
+   ========================================================================== */
+.wp-block-wpe-code-dropdown-editor {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    margin: 1.5rem 0;
 
-	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-	padding: 0.7rem 1.2rem;
+    .editor-combined-container {
+        position: relative;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
 
-	&.dark-theme {
-		background: #333;
-		color: #fff;
+    /* Complete State - Smooth, subtle background shift */
+    &.complete {
+        background-color: #f0fdf4 !important;
+        border-color: #bbf7d0 !important;
+        
+        .code-header h3 {
+            color: #166534 !important;
+        }
+    }
 
-		button {
-			background: #555;
-			color: #fff;
-		}
+    /* UNIFIED CASCADING FONT SYSTEM */
+    pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .panel-content * {
+        font-size: var(--editor-code-font-size, 14px) !important;
+        line-height: 1.5 !important;
+    }
 
-		p {
-			font-size:10px;
-			color: #ddd;
-		}
-	}
+    /* ----------------------------------------------------------------------
+       DYNAMIC CUSTOM SIDEBAR CONTROLS (DARK THEME & COMPACT SPACING)
+       ---------------------------------------------------------------------- */
+    &.dark-theme {
+        background: #1e1e1e !important;
+        border-color: #2e2e2e !important;
+        color: #f4f4f5 !important;
 
-	&.complete {
-		background-color: #caffd2;
-		transition: background-color 0.5s ease;
-	}
+        .code-header {
+            background: transparent !important;
+            border-bottom-color: #2e2e2e !important;
+            
+            h3 {
+                color: #f4f4f5 !important;
+            }
+        }
+
+        .editor-inner-blocks-wrapper {
+            background: #151515 !important;
+        }
+
+        .panel-content {
+            background: transparent !important;
+            
+            pre, code, div {
+                color: #e4e4e7 !important;
+                background: transparent !important;
+            }
+        }
+
+        .line-numbers-gutter {
+            background: #1a1a1a !important;
+            border-right-color: #2e2e2e !important;
+            color: #4b5563 !important;
+        }
+
+        .code-footer {
+            border-top-color: #2e2e2e !important;
+            background: #1e1e1e !important;
+        }
+
+        .code-analytics-meta {
+            color: #a1a1aa !important;
+            .meta-divider { color: #3f3f46; }
+        }
+
+        .copy-button,
+        .toggle-button {
+            color: #a1a1aa !important;
+
+            &:hover {
+                background: #2a2a2a !important;
+                color: #ffffff !important;
+                border: none !important;
+            }
+            &:active {
+                background: #3a3a3a !important;
+                color: #ffffff !important;
+                border: none !important;
+            }
+        }
+        
+        &.complete {
+            background-color: #062e14 !important;
+            border-color: #14532d !important;
+        }
+    }
+
+    /* FRONTEND COMPACT CONFIGURATIONS */
+    &.is-compact {
+        .code-header {
+            padding: 8px 16px !important; 
+        }
+
+        .panel-content {
+            padding: 10px 16px !important;
+        }
+
+        .line-numbers-gutter {
+            padding: 10px 8px 10px 0px !important;
+        }
+
+        .code-footer {
+            padding: 6px 16px !important;
+        }
+    }
 }
 
 a:focus {
     outline: none;
 }
 
-.task-header{
-	display: flex;
-	justify-content: space-between;
-	align-content: center;
-	align-items: center;
+/* ==========================================================================
+   2. SEAMLESS HEADER LAYOUT AREA
+   ========================================================================== */
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: transparent; 
+    border-bottom: 1px solid #f1f5f9; 
+    transition: border-color 0.25s ease;
+    position: relative;
+    z-index: 90;
 
+    h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        transition: color 0.2s ease;
+    }
 }
 
-.task-header h3  {
-	margin: 0;
+.code-title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.task-header button {
-	border: 0;
-	font-size: 2rem;
-	background: none;
-	cursor: pointer;
+.code-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
+/* ----------------------------------------------------------------------
+   HEADER INTERACTION BUTTONS & SVGS
+   ---------------------------------------------------------------------- */
+.copy-button, 
+.toggle-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #64748b;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
 
-/* Collapsible panel with animation */
-.task-panel {
-	display:flex;
-	flex-direction: column;
-	justify-content: space-between;
-	height: 0;
-	opacity: 0;
-	overflow: hidden;
-	transition: height 0.33s ease, opacity 0.25s ease;
+    &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
 }
 
-.task-panel.active {
-	    border-top: 2px dashed #cdcdcd;
-margin-top:12px;
-	height: auto; /* adjust for content height */
-	opacity: 1;
+.copy-button {
+    .icon-check { display: none; }
+    .icon-copy { display: inline-block; }
+
+    &.copied {
+        color: #10b981 !important;
+        .icon-copy { display: none; }
+        .icon-check {
+            display: inline-block;
+            animation: popIn 0.2s ease-out;
+        }
+    }
+}
+
+/* ==========================================================================
+   3. LANGUAGE SYNTAX DISPLAY BADGES
+   ========================================================================== */
+.code-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    background: #e2e8f0;
+    color: #475569;
+    flex-shrink: 0;
+}
+
+.code-badge.lang-php { background: #eef2ff; color: #4f46e5; }
+.code-badge.lang-js { background: #fef9c3; color: #854d0e; }
+.code-badge.lang-css { background: #ecfdf5; color: #047857; }
+.code-badge.lang-html { background: #fff7ed; color: #c2410c; }
+
+/* ==========================================================================
+   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE (STRUCTURALLY ALIGNED)
+   ========================================================================== */
+.editor-inner-blocks-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #fafafa;
+    
+    // BACKEND EDITOR DEFAULT: Keep the panel completely visible and operational
+    height: auto;
+    opacity: 1;
+    overflow: visible;
+}
+
+/* FRONTEND INTERACTIVITY: Apply accordion collapsing ONLY on the live site.
+   WordPress automatically wraps frontend blocks in a simple class structure. 
+   By targeting our element inside its parent block container wrapper, we isolate the frontend. */
+.wp-block-wpe-code-dropdown-editor .editor-inner-blocks-wrapper {
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+
+    // Open state triggered by the Interactivity API on click
+    &.active {
+        height: auto;
+        opacity: 1;
+    }
+}
+
+/* ----------------------------------------------------------------------
+   SCROLL CONTAINERS & SIDEBAR TRACKING (UNTOUCHED ARCHITECTURE)
+   ---------------------------------------------------------------------- */
+.panel-scroll-container {
+    max-height: var(--panel-max-height, none) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important; 
+    width: 100%;
+    position: relative;
+}
+
+.panel-content-flex-wrapper {
+    display: flex;
+    align-items: stretch;
+    position: relative;
+    width: 100%;
+}
+
+.line-numbers-gutter {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    top: 0; 
+    width: 48px;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+    padding: 20px 10px 20px 0px !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    user-select: none;
+    color: #94a3b8;
+    z-index: 10;
+    pointer-events: none;
+
+    span {
+        display: block;
+        font-family: 'Fira Code', Consolas, Monaco, monospace;
+    }
 }
 
 .panel-content {
-	margin-top: 1em;
-	margin-bottom: 1em;
-	padding:0 .5rem;
+    padding: 20px;
+    margin: 0;
+    flex-grow: 1;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto !important;
+
+    pre[class*="language-"],
+    code[class*="language-"],
+    pre, code {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important; 
+        font-family: 'Fira Code', Consolas, Monaco, monospace !important;
+        text-shadow: none !important; 
+        
+        // Horizontal Scroll Lock
+        white-space: pre !important;
+        word-wrap: normal !important;
+        word-break: normal !important;
+    }
+    
+    /* Token highlights for Light Mode */
+    .token.comment { color: #718096; }
+    .token.keyword { color: #d53f8c; font-weight: bold; }
+    .token.string { color: #38a169; }
+    .token.function { color: #3182ce; }
 }
 
-.task-footer {
-	display: flex;
-	justify-content: end;
-	align-items: end;
+.has-line-numbers {
+    .panel-content {
+        padding-left: 64px !important;
+    }
 }
 
-.task-footer p {
-	margin: 0;
-	font-size: 0.9em;
-	color: #555;
+/* ==========================================================================
+   5. COMPONENT LAYOUT FOOTER WORKSPACE
+   ========================================================================== */
+.code-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 12px 20px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    position: relative;
+    z-index: 95;
+
+    button {
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        transition: background 0.2s ease, transform 0.1s ease;
+
+        &:hover { background: #1e293b; }
+        &:active { transform: scale(0.98); }
+        
+        &.is-completed {
+            background: #10b981 !important;
+            color: white !important;
+        }
+    }
 }
 
-.task-footer button {
-	background: black;
-	color: #fff;
-	border: none;
-	border-radius: 100px;
-	padding: 8px 12px;
-	cursor: pointer;
-	transition: background 0.3s ease;
+.code-analytics-meta {
+    margin-right: auto; 
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+
+    .meta-divider {
+        color: #cbd5e1;
+    }
 }
 
-.task-footer button:hover {
-	color: #e1e1e1;
-	transform: (scale 1.05);
-}
-
-.task-comment label {
-	display: block;
-	margin-bottom: 0.5em;
-	font-weight: bold;
-}
-.task-comment textarea {
-	width: 98%;
-	min-height: 80px;
-	padding: 0.5em;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	resize: vertical;
-}
-.task-comment textarea:focus {
-	border-color: #2979fb;
-	outline: none;
-	box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
-}
+/* ==========================================================================
+   6. COMMENTS SUB-SYSTEM COMPONENT SETTINGS
+   ========================================================================== */
 .comments-wrapper {
-	padding:1rem;
-	border:#ccc 1px dashed;
-	border-radius: 8px;
-	margin:1rem;
+    padding: 1rem;
+    border: #ccc 1px dashed;
+    border-radius: 8px;
+    margin: 1rem;
+    h3 { margin: 0; }
+
+    button {
+        margin-top: 0.5em;
+        background: #00b2ff;
+        color: #fff;
+        border: none;
+        border-radius: 100px;
+        padding: 6px 10px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
 }
+
 .task-comment {
-	margin-top: 1em;
-	display:flex;
-	flex-direction: column;
-	justify-content: space-between;
-	height: 0;
-	opacity: 0;
-	overflow: hidden;
-	transition: height 0.33s ease, opacity 0.25s ease;
+    margin-top: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: height 0.33s ease, opacity 0.25s ease;
+
+    &.animate {
+        height: auto;
+        opacity: 1;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5em;
+        font-weight: bold;
+    }
+
+    textarea {
+        width: 98%;
+        min-height: 80px;
+        padding: 0.5em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+
+        &:focus {
+            border-color: #2979fb;
+            outline: none;
+            box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
+        }
+    }
 }
 
-.task-comment.animate {
-	height: auto; /* adjust for content height */
-	opacity: 1;
-}
-.comments-wrapper h3 {
-	margin: 0;
-}
 .task-comments p {
-	padding: 0.5em;
-	border-radius: 4px;
-}
-.comments-wrapper button {
-	margin-top: 0.5em;
-	background: #00b2ff;
-	color: #fff;
-	border: none;
-	border-radius: 100px;
-	padding: 6px 10px;
-	cursor: pointer;
-	transition: background 0.3s ease;
+    padding: 0.5em;
+    border-radius: 4px;
 }
 
-.task-block-editor {
-
-  // Style first inner block (title)
-  > .block-editor-inner-blocks
-  > .block-editor-block-list__layout
-  > *:first-child {
-    border-bottom: 2px dashed #cdcdcd;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-  }
-
-  // Optional: style detail area
-  > .block-editor-inner-blocks
-  > .block-editor-block-list__layout
-  > *:not(:first-child) {
-    opacity: 0.95;
-  }
+@keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
-
-
-/* Task Completion Styles */
-button.is-completed {
-    background: #4caf50 !important;
-		border-color: #4caf50 !important;
-    color: white !important;
-}
-.task-block.complete {
-    border-left: 5px solid #4caf50;
-}
-
-
-
-
-
-
