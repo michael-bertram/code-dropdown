@@ -1,18 +1,25 @@
 /* ==========================================================================
    1. MAIN BLOCK CONTAINERS (SHARED CONFIGURATION)
    ========================================================================== */
-.wp-block-wpe-code-dropdown {
+.wp-block-wpe-code-dropdown-editor { // FIXED: Class name synced perfectly with render.php
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     display: flex;
     flex-direction: column;
-    background: #ffffff; /* Clean base color */
-    border: 1px solid #e2e8f0; /* Subtle outer border */
+    background: #ffffff; 
+    border: 1px solid #e2e8f0; 
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     transition: background-color 0.3s ease, border-color 0.3s ease;
     margin: 1.5rem 0;
+
+    .editor-combined-container {
+        position: relative;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
 
     /* Complete State - Smooth, subtle background shift */
     &.complete {
@@ -24,9 +31,9 @@
         }
     }
 
-    /* UNIFIED CASCADING FONT SYSTEM (FIXED SPECIFICITY) */
+    /* UNIFIED CASCADING FONT SYSTEM */
     pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .panel-content * {
-        font-size: var(--code-font-size, 14px) !important;
+        font-size: var(--editor-code-font-size, 14px) !important; // FIXED: Variable synced with editor setup
         line-height: 1.5 !important;
     }
 
@@ -48,13 +55,12 @@
         }
 
         /* Dark-mode terminal backdrop tone */
-        .panel-content-flex-wrapper {
+        .editor-inner-blocks-wrapper {
             background: #151515 !important;
         }
 
         .panel-content {
             background: transparent !important;
-            border-bottom-color: #2e2e2e !important;
             
             pre, code, div {
                 color: #e4e4e7 !important;
@@ -66,6 +72,11 @@
             background: #1a1a1a !important;
             border-right-color: #2e2e2e !important;
             color: #4b5563 !important;
+        }
+
+        .code-footer {
+            border-top-color: #2e2e2e !important;
+            background: #1e1e1e !important;
         }
 
         .code-analytics-meta {
@@ -106,7 +117,7 @@
         }
 
         .line-numbers-gutter {
-            padding: 10px 10px 10px 16px !important;
+            padding: 10px 8px 10px 0px !important;
         }
 
         .code-footer {
@@ -128,8 +139,10 @@ a:focus {
     align-items: center;
     padding: 16px 20px;
     background: transparent; 
-    border-bottom: 1px solid transparent; 
+    border-bottom: 1px solid #f1f5f9; 
     transition: border-color 0.25s ease;
+    position: relative;
+    z-index: 90;
 
     h3 {
         margin: 0;
@@ -192,10 +205,6 @@ a:focus {
     }
 }
 
-.wp-block-wpe-code-dropdown:has(.code-panel.active) .code-header {
-    border-bottom-color: #f1f5f9;
-}
-
 /* ==========================================================================
    3. LANGUAGE SYNTAX DISPLAY BADGES
    ========================================================================== */
@@ -217,11 +226,16 @@ a:focus {
 .code-badge.lang-html { background: #fff7ed; color: #c2410c; }
 
 /* ==========================================================================
-   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE
+   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE (STRUCTURALLY ALIGNED)
    ========================================================================== */
-.code-panel {
+.editor-inner-blocks-wrapper {
+    width: 100%;
     display: flex;
     flex-direction: column;
+    position: relative;
+    background: #fafafa;
+    
+    // Interactivity API slide-toggle animations
     height: 0;
     opacity: 0;
     overflow: hidden;
@@ -234,9 +248,9 @@ a:focus {
 }
 
 .panel-scroll-container {
-    max-height: var(--panel-max-height, none);
-    overflow-y: auto;
-    overflow-x: hidden;
+    max-height: var(--panel-max-height, none) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important; // Keeps vertical and horizontal scrolling isolated
     width: 100%;
     position: relative;
 }
@@ -244,19 +258,28 @@ a:focus {
 .panel-content-flex-wrapper {
     display: flex;
     align-items: stretch;
-    background: #fafafa;
+    position: relative;
+    width: 100%;
 }
 
+/* Fixed left side-channel track gutter layer */
 .line-numbers-gutter {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    top: 0; 
+    width: 48px;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+    padding: 20px 10px 20px 0px !important;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     text-align: right;
-    padding: 20px 10px 20px 16px;
-    background: #f1f5f9;
-    border-right: 1px solid #e2e8f0;
     user-select: none;
     color: #94a3b8;
-    min-width: 28px;
+    z-index: 10;
+    pointer-events: none;
 
     span {
         display: block;
@@ -267,22 +290,30 @@ a:focus {
 .panel-content {
     padding: 20px;
     margin: 0;
-    border-bottom: 1px solid #f1f5f9;
     flex-grow: 1;
+    width: 100%;
+    box-sizing: border-box;
+    
+    // ENABLE HORIZONTAL SCROLLBAR TRACKS ON RUNAWAY CODE STRINGS
+    overflow-x: auto !important;
 
-    pre, code, .task-content {
+    pre, code, .task-content, p, div {
         margin: 0;
-        font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        background: transparent;
+        font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
+        background: transparent !important;
         padding: 0;
-        white-space: pre-wrap;
+        
+        // CRITICAL FIXES: Keep text from wrapping, forcing horizontal scroll rules
+        white-space: pre !important;
+        word-wrap: normal !important;
+        word-break: normal !important;
     }
 }
 
+// Adjust padding to safely clear the line number gutter when visible
 .has-line-numbers {
     .panel-content {
-        padding-left: 16px !important;
-        border-left: none;
+        padding-left: 64px !important;
     }
 }
 
@@ -294,7 +325,10 @@ a:focus {
     justify-content: flex-end;
     align-items: center;
     padding: 12px 20px;
-    background: transparent;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    position: relative;
+    z-index: 95;
 
     button {
         font-family: inherit;
