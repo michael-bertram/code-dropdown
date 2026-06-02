@@ -107,12 +107,21 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                     <ToggleControl
                         label={__('Compact Spacing Layout', 'code-dropdown')}
                         checked={isCompact}
+                        disabled={showLineNumbers} // Disable compact mode if line numbers are enabled to prevent layout issues
                         onChange={(value) => setAttributes({ isCompact: value })}
+                        help={showLineNumbers ? __('Compact mode is disabled when line numbers are enabled.', 'code-dropdown') : ''}
                     />
                     <ToggleControl
                         label={__('Show Line Numbers', 'code-dropdown')}
                         checked={showLineNumbers}
-                        onChange={(value) => setAttributes({ showLineNumbers: value })}
+                        onChange={(value) => {
+                            if (value && isCompact) {
+                                // If enabling line numbers while compact mode is active, disable compact mode to prevent layout issues
+                                setAttributes({ showLineNumbers: value, isCompact: false });
+                            } else {
+                                setAttributes({ showLineNumbers: value });
+                            }
+                        }}
                     />
                     <SelectControl
                         label={__('Max Panel Height', 'code-dropdown')}
