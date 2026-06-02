@@ -1,8 +1,8 @@
 /* ==========================================================================
-   BACKEND EDITOR PANEL EXCLUSIVE SEAMLESS LAYOUTS
+   BACKEND EDITOR PANEL
    ========================================================================== */
 .wp-block-wpe-code-dropdown-editor {
-    position: relative;
+    position: relative !important; 
     box-sizing: border-box;
     width: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -22,78 +22,97 @@
         flex-direction: column;
     }
 
-    /* UNIFIED CASCADING FONT SYSTEM FOR BACKEND CANVAS */
-    pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .block-editor-inner-blocks * {
+    pre, code, textarea, [data-placeholder], .block-editor-block-list__layout *, .line-numbers-gutter span {
         font-size: var(--editor-code-font-size, 14px) !important;
         line-height: 1.5 !important;
     }
 
-    /* ----------------------------------------------------------------------
-       GRID LAYOUT STRUCTURE ENGINE (FIXES THE DOUBLE-INNERBLOCK BREAKDOWN)
-       ---------------------------------------------------------------------- */
-    .editor-grid-sub-container {
-        display: flex;
-        position: relative;
+    .code-badge {
+        position: absolute !important;
+        top: 14px;
+        right: 16px;
+        z-index: 99; 
+        pointer-events: none;
+    }
+
+    .editor-inner-blocks-wrapper {
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
         background: #fafafa;
+        max-height: var(--panel-max-height, none) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
 
-        /* Strip WordPress defaults out of the inner block wrapper */
-        .block-editor-inner-blocks {
-            width: 100%;
-            flex-grow: 1;
-        }
-
-        /* Target Gutenberg's core layout element tree list */
+        .block-editor-inner-blocks,
         .block-editor-block-list__layout {
-            display: grid !important;
-            grid-template-columns: 100% !important;
+            width: 100%;
+            display: flex !important;
+            flex-direction: column !important;
             padding: 0 !important;
             margin: 0 !important;
+        }
+
+        /* Child Item Row 1: Code Header Block */
+        .block-editor-block-list__layout > *:first-child {
+            order: 1 !important;
+            background: #ffffff;
+            padding: 16px 80px 16px 20px !important; 
+            margin: 0 !important;
+            border-bottom: 1px solid #f1f5f9;
+            box-sizing: border-box;
             width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 90; /* Kept fixed above text scroll layouts */
+        }
 
-            /* Row Section 1: The Code Header Title Box */
-            > *:first-child {
-                grid-row: 1 !important;
-                background: #ffffff;
-                padding: 16px 60px 16px 20px !important; 
-                margin: 0 !important;
-                border-bottom: 1px solid #f1f5f9;
-                box-sizing: border-box;
-                width: 100%;
-            }
+        /* Child Item Row 2: Code Content Block */
+        .block-editor-block-list__layout > *:last-child {
+            order: 2 !important;
+            padding: 20px 20px 20px 20px !important;
+            margin: 0 !important;
+            box-sizing: border-box;
+            width: 100%;
+            background: transparent;
+            z-index: 5;
 
-            /* Row Section 2: The Scrollable Code Snippet Area */
-            > *:last-child {
-                grid-row: 2 !important;
-                padding: 20px !important;
+            .block-editor-rich-text__editable, pre, code, p {
                 margin: 0 !important;
-                box-sizing: border-box;
-                width: 100%;
-                
-                /* Locks scroll fields seamlessly strictly to code area rows */
-                max-height: var(--panel-max-height, none) !important;
-                overflow-y: auto;
-                overflow-x: hidden;
+                padding: 0 !important;
             }
         }
     }
 
-    /* Gutter Placement Mechanics */
     .line-numbers-gutter {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        top: 55px; /* Safely aligns exactly under the Header Row boundary */
+        width: 45px;
+        background: #f1f5f9;
+        border-right: 1px solid #e2e8f0;
+        padding: 20px 8px 20px 0px !important;
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         text-align: right;
-        padding: 85px 10px 20px 16px !important; /* Offset by 85px to push numbers clean below the header line! */
-        background: #f1f5f9;
-        border-right: 1px solid #e2e8f0;
         user-select: none;
         color: #94a3b8;
-        min-width: 28px;
-        z-index: 5;
+        z-index: 40;
+        pointer-events: none;
 
         span {
             display: block;
             font-family: 'Fira Code', Consolas, Monaco, monospace;
+        }
+    }
+
+    /* Shift content layout margins rightward automatically when gutter tracking is turned on */
+    &.has-line-numbers {
+        .editor-inner-blocks-wrapper .block-editor-block-list__layout > *:last-child {
+            padding-left: 60px !important; 
         }
     }
 
@@ -105,7 +124,7 @@
         border-color: #2e2e2e !important;
         color: #f4f4f5 !important;
 
-        .editor-grid-sub-container {
+        .editor-inner-blocks-wrapper {
             background: #151515 !important;
 
             .block-editor-block-list__layout > *:first-child {
@@ -123,14 +142,14 @@
         .wp-block-wpe-code-header,
         .wp-block-wpe-code-content,
         .block-editor-rich-text__editable,
-        pre, code, div {
+        pre, code, div, p {
             background: transparent !important;
             color: #f4f4f5 !important;
         }
 
         .code-footer {
             border-top-color: #2e2e2e !important;
-            background: transparent !important;
+            background: #1e1e1e !important;
         }
 
         .code-analytics-meta {
@@ -143,19 +162,30 @@
        COMPACT LAYOUT OVERRIDES 
        ---------------------------------------------------------------------- */
     &.is-compact {
-        .editor-grid-sub-container {
+        .code-badge {
+            top: 8px; 
+        }
+
+        .editor-inner-blocks-wrapper {
             .block-editor-block-list__layout {
                 > *:first-child {
-                    padding: 8px 60px 8px 20px !important; 
+                    padding: 8px 80px 8px 20px !important; 
                 }
                 > *:last-child {
-                    padding: 10px 20px !important; 
+                    padding: 10px 20px 10px 20px !important; 
                 }
             }
         }
 
         .line-numbers-gutter {
-            padding: 53px 10px 10px 16px !important; /* Shrunk padding offset to match compact dimensions precisely */
+            top: 38px; /* Corrects dynamic shift relative to compact header measurements */
+            padding-top: 10px !important;
+        }
+
+        &.has-line-numbers {
+            .editor-inner-blocks-wrapper .block-editor-block-list__layout > *:last-child {
+                padding-left: 60px !important; 
+            }
         }
 
         .code-footer {
@@ -163,18 +193,10 @@
         }
     }
 
-    .code-badge {
-        position: absolute;
-        top: 18px;
-        right: 16px;
-        z-index: 10;
-        pointer-events: none;
-    }
-
     .code-footer {
         padding: 12px 20px;
         border-top: 1px solid #f1f5f9;
-        z-index: 6;
-        background: transparent;
+        background: #ffffff;
+        z-index: 95; /* Keep it above scrolling workspace areas */
     }
 }

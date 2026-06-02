@@ -15,21 +15,43 @@ export default function Edit({ attributes, setAttributes, clientId }) {
         fontSize 
     } = attributes;
 
-    // 1. Single look inside the data store to pull your live text data accurately
-    const innerCodeText = useSelect((select) => {
+    // 1. DYNAMIC DATA HOOK: Track content variations live from the editor registry
+    const { cleanRawText, lineCount } = useSelect((select) => {
         const { getBlocks } = select('core/block-editor');
         const innerBlocks = getBlocks(clientId);
         const contentBlock = innerBlocks.find(block => block.name === 'wpe/code-content');
-        return contentBlock?.attributes?.code || '';
+        
+        if (!contentBlock) {
+            return { cleanRawText: '', lineCount: 1 };
+        }
+
+        // Pull active text values safely out of fallback attribute variants
+        const rawContent = contentBlock.attributes?.content || 
+                             contentBlock.attributes?.code || 
+                             contentBlock.attributes?.value || 
+                             '';
+
+        // Format dynamic line elements to calculate totals accurately
+        const textWithNewlines = rawContent
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p><p>/gi, '\n')
+            .replace(/<\/div><div>/gi, '\n');
+
+        const cleanText = textWithNewlines.replace(/<[^>]*>/g, '');
+        const linesArray = cleanText.split('\n');
+        
+        // Dynamically compute lines array tracking sizes safely
+        const calculatedLines = cleanText.trim() ? linesArray.length : 1;
+
+        return {
+            cleanRawText: cleanText,
+            lineCount: calculatedLines
+        };
     }, [clientId]);
 
-    // 2. JavaScript String Parser Engine to track analytics counts
-    const cleanRawText = innerCodeText.replace(/<[^>]*>/g, ''); 
-    const characterCount = cleanRawText.length;
-    const linesArray = cleanRawText.split('\n');
-    const lineCount = innerCodeText ? linesArray.length : 1;
+    const characterCount = cleanRawText.replace(/\r/g, '').length;
 
-    // 3. Bind dynamic class tags and layout configuration variables
+    // 2. Bind layout attributes to structural wrapper metadata classes
     const blockProps = useBlockProps({
         className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''} ${showLineNumbers ? 'has-line-numbers' : ''}`,
         style: { 
@@ -109,15 +131,21 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
             <div {...blockProps}>
                 <div className="editor-combined-container">
+                    
                     {showLanguageBadge && (
                         <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
                             {codeLanguage}
                         </span>
                     )}
-                    
-                    {/* FIXED: Single, stable inner blocks block stream mapping */}
-                    <div className="editor-grid-sub-container">
+
+                    <div className="editor-inner-blocks-wrapper">
+                        <InnerBlocks 
+                            allowedBlocks={['wpe/code-header', 'wpe/code-content']}
+                            template={[['wpe/code-header', {}], ['wpe/code-content', {}]]}
+                            templateLock="all"
+                        />
                         
+                        {/* Dynamic Floating Gutter Injection Layer inside the block layout */}
                         {showLineNumbers && (
                             <div className="line-numbers-gutter" aria-hidden="true">
                                 {Array.from({ length: lineCount }).map((_, index) => (
@@ -125,16 +153,8 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                                 ))}
                             </div>
                         )}
-
-                        <InnerBlocks 
-                            allowedBlocks={['wpe/code-header', 'wpe/code-content']}
-                            template={[['wpe/code-header', {}], ['wpe/code-content', {}]]}
-                            templateLock="all"
-                        />
-                        
                     </div>
 
-                    {/* Meta analytics footer data info tracking bar */}
                     <div className="code-footer">
                         <div className="code-analytics-meta">
                             <span>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</span>
