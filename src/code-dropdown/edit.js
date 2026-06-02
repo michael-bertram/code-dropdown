@@ -94,6 +94,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                                 { label: 'HTML', value: 'HTML' },
                             ]}
                             onChange={(value) => setAttributes({ codeLanguage: value })}
+                            help={__('Select the programming language. This will be displayed in the badge and can assist with syntax highlighting.', 'code-dropdown')}
                         />
                     )}
                 </PanelBody>

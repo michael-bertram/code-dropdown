@@ -1,7 +1,7 @@
 /* ==========================================================================
    1. MAIN BLOCK CONTAINERS (SHARED CONFIGURATION)
    ========================================================================== */
-.wp-block-wpe-code-dropdown-editor { // FIXED: Class name synced perfectly with render.php
+.wp-block-wpe-code-dropdown-editor {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     display: flex;
@@ -33,7 +33,7 @@
 
     /* UNIFIED CASCADING FONT SYSTEM */
     pre, code, textarea, .line-numbers-gutter span, [data-placeholder], .panel-content * {
-        font-size: var(--editor-code-font-size, 14px) !important; // FIXED: Variable synced with editor setup
+        font-size: var(--editor-code-font-size, 14px) !important;
         line-height: 1.5 !important;
     }
 
@@ -54,7 +54,6 @@
             }
         }
 
-        /* Dark-mode terminal backdrop tone */
         .editor-inner-blocks-wrapper {
             background: #151515 !important;
         }
@@ -235,22 +234,35 @@ a:focus {
     position: relative;
     background: #fafafa;
     
-    // Interactivity API slide-toggle animations
+    // BACKEND EDITOR DEFAULT: Keep the panel completely visible and operational
+    height: auto;
+    opacity: 1;
+    overflow: visible;
+}
+
+/* FRONTEND INTERACTIVITY: Apply accordion collapsing ONLY on the live site.
+   WordPress automatically wraps frontend blocks in a simple class structure. 
+   By targeting our element inside its parent block container wrapper, we isolate the frontend. */
+.wp-block-wpe-code-dropdown-editor .editor-inner-blocks-wrapper {
     height: 0;
     opacity: 0;
     overflow: hidden;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 
+    // Open state triggered by the Interactivity API on click
     &.active {
         height: auto;
         opacity: 1;
     }
 }
 
+/* ----------------------------------------------------------------------
+   SCROLL CONTAINERS & SIDEBAR TRACKING (UNTOUCHED ARCHITECTURE)
+   ---------------------------------------------------------------------- */
 .panel-scroll-container {
     max-height: var(--panel-max-height, none) !important;
     overflow-y: auto !important;
-    overflow-x: hidden !important; // Keeps vertical and horizontal scrolling isolated
+    overflow-x: hidden !important; 
     width: 100%;
     position: relative;
 }
@@ -262,7 +274,6 @@ a:focus {
     width: 100%;
 }
 
-/* Fixed left side-channel track gutter layer */
 .line-numbers-gutter {
     position: absolute;
     left: 0;
@@ -293,24 +304,30 @@ a:focus {
     flex-grow: 1;
     width: 100%;
     box-sizing: border-box;
-    
-    // ENABLE HORIZONTAL SCROLLBAR TRACKS ON RUNAWAY CODE STRINGS
     overflow-x: auto !important;
 
-    pre, code, .task-content, p, div {
-        margin: 0;
-        font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
-        background: transparent !important;
-        padding: 0;
+    pre[class*="language-"],
+    code[class*="language-"],
+    pre, code {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important; 
+        font-family: 'Fira Code', Consolas, Monaco, monospace !important;
+        text-shadow: none !important; 
         
-        // CRITICAL FIXES: Keep text from wrapping, forcing horizontal scroll rules
+        // Horizontal Scroll Lock
         white-space: pre !important;
         word-wrap: normal !important;
         word-break: normal !important;
     }
+    
+    /* Token highlights for Light Mode */
+    .token.comment { color: #718096; }
+    .token.keyword { color: #d53f8c; font-weight: bold; }
+    .token.string { color: #38a169; }
+    .token.function { color: #3182ce; }
 }
 
-// Adjust padding to safely clear the line number gutter when visible
 .has-line-numbers {
     .panel-content {
         padding-left: 64px !important;

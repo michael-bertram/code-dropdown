@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BACKEND EDITOR PANEL
+   BACKEND EDITOR PANEL EXCLUSIVE SEAMLESS LAYOUTS
    ========================================================================== */
 .wp-block-wpe-code-dropdown-editor {
     position: relative !important; 
@@ -22,6 +22,7 @@
         flex-direction: column;
     }
 
+    /* UNIFIED CASCADING FONT SYSTEM */
     pre, code, textarea, [data-placeholder], .block-editor-block-list__layout *, .line-numbers-gutter span {
         font-size: var(--editor-code-font-size, 14px) !important;
         line-height: 1.5 !important;
@@ -35,15 +36,21 @@
         pointer-events: none;
     }
 
+    /* ----------------------------------------------------------------------
+       EDITOR CONTAINER TRACKS (FORCE OPEN & PREVENT COLLAPSING)
+       ---------------------------------------------------------------------- */
     .editor-inner-blocks-wrapper {
         width: 100%;
         display: flex;
         flex-direction: column;
         position: relative;
         background: #fafafa;
+        
+        // CRITICAL: Explicitly lock the editor open regardless of frontend rules
+        height: auto !important;
+        opacity: 1 !important;
+        overflow: visible !important;
         max-height: var(--panel-max-height, none) !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
 
         .block-editor-inner-blocks,
         .block-editor-block-list__layout {
@@ -63,51 +70,63 @@
             border-bottom: 1px solid #f1f5f9;
             box-sizing: border-box;
             width: 100%;
-            position: sticky;
-            top: 0;
-            z-index: 90; /* Kept fixed above text scroll layouts */
         }
 
-                    /* Child Item Row 2: The Code Text field editor workspace box row wrapper input */
-            .block-editor-block-list__layout > *:last-child {
-                order: 2 !important;
-                padding: 20px !important;
+        /* Child Item Row 2: Code Content Block */
+        .block-editor-block-list__layout > *:last-child {
+            order: 2 !important;
+            padding: 20px 20px 20px 20px !important;
+            margin: 0 !important;
+            box-sizing: border-box;
+            width: 100%;
+            background: transparent;
+            z-index: 5;
+            
+            // Force horizontal scroll lock in the editor so lines don't wrap while typing
+            overflow-x: auto !important;
+
+            .block-editor-rich-text__editable, pre, code, p, div {
                 margin: 0 !important;
-                box-sizing: border-box;
-                width: 100%;
-                background: transparent;
-                z-index: 5;
-
-                /* CHANGE HERE: Force the container to handle horizontal overflow */
-                overflow-x: auto !important; 
-                white-space: pre !important;  /* Stops text from wrapping to the next visual line */
-
-                .block-editor-rich-text__editable, pre, code, p {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    white-space: pre !important; /* Ensures child elements respect horizontal spacing */
-                    word-wrap: normal !important;
-                    word-break: normal !important;
-                }
+                padding: 0 !important;
+                white-space: pre !important;
+                word-wrap: normal !important;
+                word-break: normal !important;
             }
+        }
     }
 
+    .panel-scroll-container {
+        max-height: var(--panel-max-height, none) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        width: 100%;
+        position: relative;
+    }
+
+    .panel-content-flex-wrapper {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        position: relative;
+    }
+
+    /* Absolute Left Gutter Track Column */
     .line-numbers-gutter {
         position: absolute;
         left: 0;
         bottom: 0;
-        top: 55px; /* Safely aligns exactly under the Header Row boundary */
-        width: 45px;
+        top: 55px; /* Sits perfectly under the title header row */
+        width: 48px;
         background: #f1f5f9;
         border-right: 1px solid #e2e8f0;
-        padding: 20px 8px 20px 0px !important;
+        padding: 20px 10px 20px 0px !important;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         text-align: right;
         user-select: none;
         color: #94a3b8;
-        z-index: 40;
+        z-index: 10;
         pointer-events: none;
 
         span {
@@ -116,10 +135,10 @@
         }
     }
 
-    /* Shift content layout margins rightward automatically when gutter tracking is turned on */
+    /* Apply content padding offset when line numbers are checked */
     &.has-line-numbers {
         .editor-inner-blocks-wrapper .block-editor-block-list__layout > *:last-child {
-            padding-left: 60px !important; 
+            padding-left: 64px !important; 
         }
     }
 
@@ -169,34 +188,18 @@
        COMPACT LAYOUT OVERRIDES 
        ---------------------------------------------------------------------- */
     &.is-compact {
-        .code-badge {
-            top: 8px; 
-        }
+        .code-badge { top: 8px; }
 
         .editor-inner-blocks-wrapper {
             .block-editor-block-list__layout {
-                > *:first-child {
-                    padding: 8px 80px 8px 20px !important; 
-                }
-                > *:last-child {
-                    padding: 10px 20px 10px 20px !important; 
-                }
+                > *:first-child { padding: 8px 80px 8px 20px !important; }
+                > *:last-child { padding: 10px 20px 10px 20px !important; }
             }
         }
 
         .line-numbers-gutter {
-            top: 38px; /* Corrects dynamic shift relative to compact header measurements */
+            top: 38px; 
             padding-top: 10px !important;
-        }
-
-        &.has-line-numbers {
-            .editor-inner-blocks-wrapper .block-editor-block-list__layout > *:last-child {
-                padding-left: 60px !important; 
-            }
-        }
-
-        .code-footer {
-            padding: 6px 20px !important; 
         }
     }
 
@@ -204,6 +207,6 @@
         padding: 12px 20px;
         border-top: 1px solid #f1f5f9;
         background: #ffffff;
-        z-index: 95; /* Keep it above scrolling workspace areas */
+        z-index: 95;
     }
 }
