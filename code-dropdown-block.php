@@ -53,3 +53,49 @@ function wpe_enqueue_syntax_highlighter_assets() {
     }
 }
 add_action( 'wp_enqueue_scripts', 'wpe_enqueue_syntax_highlighter_assets' );
+
+<?php
+/**
+ * Register REST route for AI Code Explanation.
+ */
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'tutorial-code/v1', '/explain', array(
+        'methods'             => 'POST',
+        'permission_callback' => '__return_true', // Add rate-limiting/nonces for production
+        'callback'            => function ( WP_REST_Request $request ) {
+            $code     = $request->get_param( 'code' );
+            $filename = sanitize_text_field( $request->get_param( 'filename' ) );
+            $language = sanitize_text_field( $request->get_param( 'language' ) );
+
+            if ( empty( $code ) ) {
+                return new WP_Error( 'missing_code', __( 'No code provided.', 'tutorial-code' ), array( 'status' => 400 ) );
+            }
+
+            $system_instruction = 'You are an expert developer assistant inside a coding tutorial. ' .
+                'Explain the given code snippet concisely for a student. Focus on what key functions do, ' .
+                'any important parameters, and potential pitfalls. Keep the explanation to 3-4 bullet points max.';
+
+            $prompt = sprintf(
+                "File: %s\nLanguage: %s\nCode:\n```\n%s\n```",
+                $filename ?: 'snippet',
+                $language ?: 'plain text',
+                $code
+            );
+
+            try {
+                // Using WP 7.0's native wp_ai_client_prompt builder
+                $result = wp_ai_client_prompt( $prompt )
+                    ->using_system_instruction( $system_instruction )
+                    ->using_temperature( 0.2 )
+                    ->using_model_preference( array( 'gpt-4o-mini', 'claude-3-5-haiku', 'gemini-1-5-flash' ) )
+                    ->generate_text_result();
+
+                return new WP_REST_Response( array(
+                    'explanation' => $result->get_text_content(),
+                ), 200 );
+            } catch ( Exception $e ) {
+                return new WP_Error( 'ai_error', $e->getMessage(), array( 'status' => 500 ) );
+            }
+        },
+    ) );
+} );
