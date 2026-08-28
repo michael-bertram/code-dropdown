@@ -1,13 +1,16 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
-import { useSelect } from '@wordpress/data'; 
+import { PanelBody, ToggleControl, SelectControl, Button, Spinner, TextControl } from '@wordpress/components';
+import { useSelect, useDispatch } from '@wordpress/data'; 
+import { useState } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
 import './editor.scss';
 
 export default function Edit({ attributes, setAttributes, clientId }) {
     const { 
         showLanguageBadge, 
         codeLanguage, 
+        filename,
         isDarkMode, 
         isCompact,
         maxHeight,
@@ -15,14 +18,23 @@ export default function Edit({ attributes, setAttributes, clientId }) {
         fontSize 
     } = attributes;
 
+    // AI Auto-Fill Async UI State
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [aiError, setAiError] = useState(null);
+
+    // Dispatcher to update child block attributes (e.g. wpe/code-header)
+    const { updateBlockAttributes } = useDispatch('core/block-editor');
+
     // 1. DYNAMIC DATA HOOK: Track content variations live from the editor registry
-    const { cleanRawText, lineCount } = useSelect((select) => {
+    const { cleanRawText, lineCount, headerBlockId } = useSelect((select) => {
         const { getBlocks } = select('core/block-editor');
         const innerBlocks = getBlocks(clientId);
+        
         const contentBlock = innerBlocks.find(block => block.name === 'wpe/code-content');
+        const headerBlock = innerBlocks.find(block => block.name === 'wpe/code-header');
         
         if (!contentBlock) {
-            return { cleanRawText: '', lineCount: 1 };
+            return { cleanRawText: '', lineCount: 1, headerBlockId: headerBlock?.clientId || null };
         }
 
         // Pull active text values safely out of fallback attribute variants
@@ -45,13 +57,55 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
         return {
             cleanRawText: cleanText,
-            lineCount: calculatedLines
+            lineCount: calculatedLines,
+            headerBlockId: headerBlock?.clientId || null
         };
     }, [clientId]);
 
     const characterCount = cleanRawText.replace(/\r/g, '').length;
 
-    // 2. Bind layout attributes to structural wrapper metadata classes
+    // 2. AI ABILITIES API DISPATCHER (Phase 1)
+    const handleAutoFill = async () => {
+        if (!cleanRawText.trim()) {
+            setAiError(__('Please enter some code into the snippet block first.', 'code-dropdown'));
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAiError(null);
+
+        try {
+            const response = await apiFetch({
+                path: '/wp-json/wp/v2/abilities/code-dropdown/auto-fill-metadata/run',
+                method: 'POST',
+                data: {
+                    code: cleanRawText,
+                },
+            });
+
+            // Update parent block attributes
+            setAttributes({
+                codeLanguage: response.codeLanguage || codeLanguage,
+                filename: response.filename || filename,
+            });
+
+            // If a header child block exists, update its title attribute dynamically
+            if (headerBlockId && response.title) {
+                updateBlockAttributes(headerBlockId, {
+                    title: response.title,
+                });
+            }
+
+        } catch (err) {
+            setAiError(
+                err.message || __('Failed to auto-fill metadata via Abilities API.', 'code-dropdown')
+            );
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    // 3. Bind layout attributes to structural wrapper metadata classes
     const blockProps = useBlockProps({
         className: `wp-block-wpe-code-dropdown-editor ${isDarkMode ? 'dark-theme' : ''} ${isCompact ? 'is-compact' : ''} ${showLineNumbers ? 'has-line-numbers' : ''}`,
         style: { 
@@ -61,23 +115,47 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     });
 
     const maxHeightOptions = [
-        { label: 'No Limit (Scroll disabled)', value: 'none' },
-        { label: 'Short (250px)', value: '250px' },
-        { label: 'Medium (400px)', value: '400px' },
-        { label: 'Tall (600px)', value: '600px' },
+        { label: __('No Limit (Scroll disabled)', 'code-dropdown'), value: 'none' },
+        { label: __('Short (250px)', 'code-dropdown'), value: '250px' },
+        { label: __('Medium (400px)', 'code-dropdown'), value: '400px' },
+        { label: __('Tall (600px)', 'code-dropdown'), value: '600px' },
     ];
 
     const fontSizeOptions = [
-        { label: 'Small (12px)', value: '12px' },
-        { label: 'Normal (14px)', value: '14px' },
-        { label: 'Medium (16px)', value: '16px' },
-        { label: 'Large (18px)', value: '18px' },
+        { label: __('Small (12px)', 'code-dropdown'), value: '12px' },
+        { label: __('Normal (14px)', 'code-dropdown'), value: '14px' },
+        { label: __('Medium (16px)', 'code-dropdown'), value: '16px' },
+        { label: __('Large (18px)', 'code-dropdown'), value: '18px' },
     ];
 
     return (
         <>
             <InspectorControls>
-                <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={true}>
+                {/* AI Automation Panel (WordPress Abilities API Integration) */}
+                <PanelBody title={__('AI Utilities', 'code-dropdown')} initialOpen={true}>
+                    <Button
+                        variant="secondary"
+                        isBusy={isAnalyzing}
+                        disabled={isAnalyzing || !cleanRawText.trim()}
+                        onClick={handleAutoFill}
+                        style={{ width: '100%', justifyContent: 'center', marginBottom: '12px' }}
+                    >
+                        {isAnalyzing ? <Spinner /> : __('Auto-Fill Block Details (AI)', 'code-dropdown')}
+                    </Button>
+
+                    {aiError && (
+                        <p style={{ color: '#cc1818', fontSize: '12px', marginBottom: '12px' }}>{aiError}</p>
+                    )}
+
+                    <TextControl
+                        label={__('Filename / Label', 'code-dropdown')}
+                        value={filename || ''}
+                        onChange={(value) => setAttributes({ filename: value })}
+                        help={__('Idiomatic filename auto-generated by AI or specified manually.', 'code-dropdown')}
+                    />
+                </PanelBody>
+
+                <PanelBody title={__('Code Display Settings', 'code-dropdown')} initialOpen={false}>
                     <ToggleControl
                         label={__('Show Language Badge', 'code-dropdown')}
                         checked={showLanguageBadge}
@@ -92,6 +170,8 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                                 { label: 'JavaScript', value: 'JS' },
                                 { label: 'CSS', value: 'CSS' },
                                 { label: 'HTML', value: 'HTML' },
+                                { label: 'SQL', value: 'SQL' },
+                                { label: 'Bash', value: 'Bash' },
                             ]}
                             onChange={(value) => setAttributes({ codeLanguage: value })}
                             help={__('Select the programming language. This will be displayed in the badge and can assist with syntax highlighting.', 'code-dropdown')}
@@ -99,7 +179,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                     )}
                 </PanelBody>
 
-                <PanelBody title={__('Design & Layout', 'code-dropdown')} initialOpen={true}>
+                <PanelBody title={__('Design & Layout', 'code-dropdown')} initialOpen={false}>
                     <ToggleControl
                         label={__('Use Dark Theme', 'code-dropdown')}
                         checked={isDarkMode}
@@ -108,7 +188,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                     <ToggleControl
                         label={__('Compact Spacing Layout', 'code-dropdown')}
                         checked={isCompact}
-                        disabled={showLineNumbers} // Disable compact mode if line numbers are enabled to prevent layout issues
+                        disabled={showLineNumbers}
                         onChange={(value) => setAttributes({ isCompact: value })}
                         help={showLineNumbers ? __('Compact mode is disabled when line numbers are enabled.', 'code-dropdown') : ''}
                     />
@@ -117,7 +197,6 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                         checked={showLineNumbers}
                         onChange={(value) => {
                             if (value && isCompact) {
-                                // If enabling line numbers while compact mode is active, disable compact mode to prevent layout issues
                                 setAttributes({ showLineNumbers: value, isCompact: false });
                             } else {
                                 setAttributes({ showLineNumbers: value });
@@ -143,7 +222,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                 <div className="editor-combined-container">
                     
                     {showLanguageBadge && (
-                        <span className={`code-badge lang-${codeLanguage.toLowerCase()}`}>
+                        <span className={`code-badge lang-${(codeLanguage || 'php').toLowerCase()}`}>
                             {codeLanguage}
                         </span>
                     )}
