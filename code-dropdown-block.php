@@ -155,3 +155,31 @@ function code_dropdown_execute_autofill_ability( array $args ) {
 - 'title': A concise 3-6 word descriptive title.
 
 Code:
+{$code}
+if ( function_exists( 'wp_ai_client_prompt' ) ) {
+		$response = wp_ai_client_prompt(
+			$prompt,
+			array(
+				'response_format' => array( 'type' => 'json_object' ),
+			)
+		);
+
+		if ( ! is_wp_error( $response ) ) {
+			$data = json_decode( $response, true );
+			if ( is_array( $data ) && isset( $data['codeLanguage'], $data['filename'], $data['title'] ) ) {
+				return array(
+					'codeLanguage' => sanitize_text_field( $data['codeLanguage'] ),
+					'filename'     => sanitize_file_name( $data['filename'] ),
+					'title'        => sanitize_text_field( $data['title'] ),
+				);
+			}
+		}
+	}
+
+	// Dynamic Fallback logic when AI provider is unreachable
+	return array(
+		'codeLanguage' => 'PHP',
+		'filename'     => 'snippet.php',
+		'title'        => __( 'Code Snippet', 'code-dropdown' ),
+	);
+}
