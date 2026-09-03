@@ -1,7 +1,7 @@
 <?php
 /**
  * Render Template: Code Dropdown Block
- * Integrated with Interactivity API & Abilities API Step 4 ("Explain This Code")
+ * Integrated with Interactivity API & Abilities API Step 4 ("Explain This Code") & Step 5 ("Adapt to My Setup")
  */
 
 $persistent_id   = ! empty( $attributes['id'] ) ? $attributes['id'] : wp_unique_id( 'wpe-code-' );
@@ -101,7 +101,14 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 		'isExplaining'            => false,
 		'isAnalyzingExplanation'  => false,
 		'explanationText'         => '',
+		'formattedExplanationHtml'=> '',
 		'explanationError'        => '',
+		'isPersonalizing'         => false,
+		'isCustomizing'           => false,
+		'isPersonalized'          => false,
+		'userInstruction'         => '',
+		'personalizeError'        => '',
+		'activeCodeText'          => esc_textarea( $raw_code_text ),
 		'codeLanguage'            => esc_attr( $code_lang ),
 		'highlightLines'          => esc_attr( $highlight_lines ),
 		'rawCodeText'             => esc_textarea( $raw_code_text ),
@@ -123,15 +130,6 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 			</div>
 
 			<div class="code-actions">
-				<button 
-					class="explain-button" 
-					data-wp-on--click="actions.explainCode"
-					data-wp-class--active="context.isExplaining"
-					aria-label="<?php esc_attr_e( 'Explain this code using AI', 'code-dropdown' ); ?>"
-				>
-					<span><?php esc_html_e( 'Explain', 'code-dropdown' ); ?></span>
-				</button>
-
 				<button class="copy-button" data-wp-on--click="actions.copyToClipboard" data-wp-class--copied="context.isCopied" aria-label="<?php esc_attr_e( 'Copy code to clipboard', 'code-dropdown' ); ?>">
 					<svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
 					<svg class="icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -148,39 +146,96 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 				<div class="panel-content-flex-wrapper">
 					<?php echo $line_gutter_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<div class="panel-content">
-						<pre><code class="language-<?php echo esc_attr( $selected_lang ); ?>"><?php echo esc_html( $raw_code_text ); ?></code></pre>
+						<pre><code class="language-<?php echo esc_attr( $selected_lang ); ?>" data-wp-text="context.activeCodeText"><?php echo esc_html( $raw_code_text ); ?></code></pre>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Direct Bindings for Explanation Drawer -->
-		<div 
-			class="code-explanation-drawer" 
-			data-wp-bind--hidden="!context.isExplaining"
-		>
-			<div class="explanation-inner">
-				<div class="explanation-loading" data-wp-bind--hidden="!context.isAnalyzingExplanation">
-					<span class="spinner-icon"></span>
-					<span><?php esc_html_e( 'Analyzing code logic...', 'code-dropdown' ); ?></span>
-				</div>
+<!-- Step 4: Refined AI Explanation Drawer -->
+<div 
+	class="code-explanation-drawer" 
+	data-wp-bind--hidden="!context.isExplaining"
+>
+	<div class="explanation-inner">
+		<div class="explanation-header">
+			<div class="explanation-title">
+				<svg class="ai-sparkle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+				</svg>
+				<span><?php esc_html_e( 'Code Explanation', 'code-dropdown' ); ?></span>
+			</div>
+			<button 
+				type="button"
+				class="explanation-close-btn" 
+				data-wp-on--click="actions.closeExplanation" 
+				aria-label="<?php esc_attr_e( 'Close explanation', 'code-dropdown' ); ?>"
+			>
+				&times;
+			</button>
+		</div>
 
-				<div class="explanation-text" data-wp-bind--hidden="context.isAnalyzingExplanation" data-wp-text="context.explanationText"></div>
-
-				<div class="explanation-error" data-wp-bind--hidden="!context.explanationError" data-wp-text="context.explanationError"></div>
+		<!-- Loading State: Spinner + Skeleton Lines -->
+		<div class="explanation-loading-container" data-wp-bind--hidden="!context.isAnalyzingExplanation">
+			<div class="spinner-status-bar">
+				<span class="spinner-icon"></span>
+				<span class="spinner-text"><?php esc_html_e( 'Analyzing code logic with AI...', 'code-dropdown' ); ?></span>
+			</div>
+			<div class="explanation-skeleton">
+				<div class="skeleton-line shimmer"></div>
+				<div class="skeleton-line shimmer short"></div>
+				<div class="skeleton-line shimmer medium"></div>
 			</div>
 		</div>
 
+		<!-- Formatted Explanation Output -->
+		<div 
+			class="explanation-content" 
+			data-wp-bind--hidden="context.isAnalyzingExplanation || !context.explanationText"
+		>
+			<div class="explanation-formatted-list" data-wp-html="context.formattedExplanationHtml"></div>
+		</div>
+
+		<!-- Error Message Card -->
+		<div 
+			class="explanation-error-card" 
+			data-wp-bind--hidden="!context.explanationError"
+		>
+			<span class="error-icon">&#9888;</span>
+			<span data-wp-text="context.explanationError"></span>
+		</div>
+	</div>
+</div>
+
+		<!-- Code Footer: Includes Analytics Meta, Relocated Explain Button & Completion Toggle -->
 		<div class="code-footer">
 			<div class="code-analytics-meta">
 				<span><?php echo esc_html( sprintf( _n( '%d line', '%d lines', $line_count, 'code-dropdown' ), $line_count ) ); ?></span>
 				<span class="meta-divider">•</span>
 				<span><?php echo esc_html( sprintf( __( '%s chars', 'code-dropdown' ), number_format( $character_count ) ) ); ?></span>
 			</div>
-			
-			<button data-wp-on--click="actions.toggleComplete" data-wp-class--is-completed="context.isComplete">
-				<span data-wp-text="context.completeText"></span>
-			</button>
+
+			<div class="code-footer-actions">
+				<button 
+					class="explain-button" 
+					data-wp-on--click="actions.explainCode"
+					data-wp-class--active="context.isExplaining"
+					aria-label="<?php esc_attr_e( 'Explain this code using AI', 'code-dropdown' ); ?>"
+				>
+					<!-- <svg class="icon-sparkle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+					</svg> -->
+					<span><?php esc_html_e( 'Explain', 'code-dropdown' ); ?></span>
+				</button>
+
+				<button 
+					class="complete-toggle-btn" 
+					data-wp-on--click="actions.toggleComplete" 
+					data-wp-class--is-completed="context.isComplete"
+				>
+					<span data-wp-text="context.completeText"></span>
+				</button>
+			</div>
 		</div>
 
 	</div>

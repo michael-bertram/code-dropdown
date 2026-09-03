@@ -473,3 +473,161 @@ a:focus {
 @keyframes wpe-spin {
     to { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   STEP 4: EXPLANATION DRAWER, CLOSE BUTTON & SPINNER STYLES
+   ========================================================================== */
+
+.code-explanation-drawer {
+	background-color: #f8fafc;
+	border-top: 1px solid #e2e8f0;
+	border-bottom: 1px solid #e2e8f0;
+	padding: 14px 16px;
+	transition: all 0.25s ease-in-out;
+}
+
+.dark-theme .code-explanation-drawer {
+	background-color: #1e293b;
+	border-top-color: #334155;
+	border-bottom-color: #334155;
+}
+
+/* Header & Flex Alignment */
+.explanation-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.explanation-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #2563eb;
+}
+
+.dark-theme .explanation-title {
+	color: #60a5fa;
+}
+
+/* Styled Close Button */
+.explanation-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	font-size: 18px;
+	line-height: 1;
+	color: #64748b;
+	cursor: pointer;
+	padding: 0;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.explanation-close-btn:hover {
+	background-color: #e2e8f0;
+	color: #0f172a;
+}
+
+.dark-theme .explanation-close-btn:hover {
+	background-color: #334155;
+	color: #f8fafc;
+}
+
+/* Spinner & Loading Bar */
+.explanation-loading-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 4px 0;
+}
+
+.spinner-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #475569;
+}
+
+.dark-theme .spinner-status-bar {
+	color: #94a3b8;
+}
+
+.spinner-icon {
+	width: 14px;
+	height: 14px;
+	border: 2px solid #cbd5e1;
+	border-top-color: #2563eb;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+.dark-theme .spinner-icon {
+	border-color: #475569;
+	border-top-color: #60a5fa;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Skeleton Lines */
+.explanation-skeleton {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.skeleton-line {
+	height: 10px;
+	border-radius: 4px;
+	background: #e2e8f0;
+	width: 100%;
+}
+
+.skeleton-line.short {
+	width: 60%;
+}
+
+.skeleton-line.medium {
+	width: 80%;
+}
+.explanation-error-card {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    margin-top:10px;
+    padding: 12px;
+    border-radius: 6px;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.shimmer {
+	background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+}
+
+.dark-theme .shimmer {
+	background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+	background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+	0% { background-position: -200% 0; }
+	100% { background-position: 200% 0; }
+}

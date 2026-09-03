@@ -2,7 +2,40 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
 
 const STORAGE_KEY = 'wpe_tasks';
 
-const { state } = store('wpe', {
+/**
+ * Helper: Transforms raw explanation bullet points into structured HTML
+ * cards with automatic inline code syntax highlighting (`variable` or functionName()).
+ *
+ * @param {string} text Raw response string from AI generator.
+ * @return {string} Sanitized, structured HTML string for data-wp-html binding.
+ */
+function formatExplanationText(text) {
+  if (!text) return '';
+
+  const lines = text.split(/\n+/);
+  const formattedItems = lines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      // Strip leading bullet tokens (•, -, *, 1.)
+      let cleanLine = line.replace(/^([•\-*\d.]+\s*)/, '');
+
+      // Highlight backticked tokens and function calls like functionName()
+      cleanLine = cleanLine.replace(/`([^`]+)`/g, '<code>$1</code>');
+      cleanLine = cleanLine.replace(/\b([a-zA-Z0-9_]+\(\))/g, '<code>$1</code>');
+
+      return `
+        <div class="explanation-bullet-item">
+          <span class="bullet-badge"></span>
+          <div class="bullet-text">${cleanLine}</div>
+        </div>
+      `;
+    });
+
+  return formattedItems.join('');
+}
+
+const { state, actions } = store('wpe', {
   state: {
     currentlyOpenId: null,
     registeredIds: [],
@@ -63,72 +96,168 @@ const { state } = store('wpe', {
       }
     },
 
-    /**
-     * Resilient Explain Code Action with Dual-Path Routing
-     */
-*explainCode() {
-  const context = getContext();
+    /* ==========================================================================
+       STEP 4: AI EXPLANATION DRAWER ACTIONS
+       ========================================================================== */
 
-  // Toggle drawer off if already open and populated
-  if (context.isExplaining && context.explanationText) {
-    context.isExplaining = false;
-    return;
-  }
+    closeExplanation() {
+      const context = getContext();
+      context.isExplaining = false;
+      context.explanationError = '';
+    },
 
-  context.isExplaining = true;
+    *explainCode() {
+      const context = getContext();
 
-  if (context.explanationText) {
-    return;
-  }
+      // Toggle drawer off if already open with completed content
+      if (context.isExplaining && context.explanationText && !context.isAnalyzingExplanation) {
+        context.isExplaining = false;
+        return;
+      }
 
-  context.isAnalyzingExplanation = true;
-  context.explanationError = '';
+      context.isExplaining = true;
 
-  const payload = JSON.stringify({
-    code: context.rawCodeText || '',
-    language: context.codeLanguage || 'PHP',
-  });
+      // Serve cached explanation if available
+      if (context.explanationText && !context.explanationError) {
+        return;
+      }
 
-  let response = null;
+      context.isAnalyzingExplanation = true;
+      context.explanationError = '';
+      context.explanationText = '';
+      context.formattedExplanationHtml = '';
 
-  try {
-    const directRes = yield fetch('/wp-json/code-dropdown/v1/explain-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-    });
-
-    if (directRes.ok) {
-      response = yield directRes.json();
-    }
-  } catch (err) {
-    // Fall through
-  }
-
-  if (!response) {
-    try {
-      const abilityRes = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/explain-code/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
+      const payload = JSON.stringify({
+        code: context.rawCodeText || '',
+        language: context.codeLanguage || 'PHP',
       });
 
-      if (abilityRes.ok) {
-        response = yield abilityRes.json();
+      let response = null;
+
+      try {
+        const directRes = yield fetch('/wp-json/code-dropdown/v1/explain-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
+        if (directRes.ok) {
+          response = yield directRes.json();
+        }
+      } catch (err) {
+        // Fall through
       }
-    } catch (err) {
-      // Both paths failed
-    }
-  }
 
-  if (response && response.explanation) {
-    context.explanationText = response.explanation;
-  } else {
-    context.explanationError = 'Unable to generate code explanation at this time.';
-  }
+      if (!response) {
+        try {
+          const abilityRes = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/explain-code/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+          });
+          if (abilityRes.ok) {
+            response = yield abilityRes.json();
+          }
+        } catch (err) {
+          // Fall through
+        }
+      }
 
-  context.isAnalyzingExplanation = false;
-},
+      if (response && response.explanation) {
+        context.explanationText = response.explanation;
+        context.formattedExplanationHtml = formatExplanationText(response.explanation);
+        context.explanationError = '';
+      } else {
+        context.explanationError = 'Unable to generate code explanation right now.';
+        context.explanationText = '';
+        context.formattedExplanationHtml = '';
+      }
+
+      context.isAnalyzingExplanation = false;
+    },
+
+    /* ==========================================================================
+       STEP 5: CODE PERSONALIZER ("ADAPT TO MY SETUP") ACTIONS
+       ========================================================================== */
+
+    handleCustomInstructionInput(e) {
+      const context = getContext();
+      context.userInstruction = e.target.value;
+    },
+
+    togglePersonalizeDrawer() {
+      const context = getContext();
+      context.isPersonalizing = !context.isPersonalizing;
+    },
+
+    *customizeCode() {
+      const context = getContext();
+
+      if (!context.userInstruction || !context.userInstruction.trim()) {
+        context.personalizeError = 'Please enter your setup variables or instructions.';
+        return;
+      }
+
+      context.isCustomizing = true;
+      context.personalizeError = '';
+
+      const payload = JSON.stringify({
+        code: context.activeCodeText || context.rawCodeText || '',
+        userInstruction: context.userInstruction,
+        language: context.codeLanguage || 'PHP',
+      });
+
+      let response = null;
+
+      try {
+        const directRes = yield fetch('/wp-json/code-dropdown/v1/customize-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
+        if (directRes.ok) {
+          response = yield directRes.json();
+        }
+      } catch (err) {
+        // Fall through
+      }
+
+      if (!response) {
+        try {
+          const abilityRes = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/customize-code/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+          });
+          if (abilityRes.ok) {
+            response = yield abilityRes.json();
+          }
+        } catch (err) {
+          // Fall through
+        }
+      }
+
+      if (response && response.personalizedCode) {
+        context.activeCodeText = response.personalizedCode;
+        context.isPersonalized = true;
+        context.isPersonalizing = false;
+        context.userInstruction = '';
+      } else {
+        context.personalizeError = 'Unable to adapt code to your setup right now.';
+      }
+
+      context.isCustomizing = false;
+    },
+
+    resetCode() {
+      const context = getContext();
+      context.activeCodeText = context.rawCodeText;
+      context.isPersonalized = false;
+      context.personalizeError = '';
+    },
+
+    /* ==========================================================================
+       CLIPBOARD UTILITY
+       ========================================================================== */
 
     async copyToClipboard() {
       const context = getContext();
@@ -188,10 +317,22 @@ const { state } = store('wpe', {
 
       context.isComplete = state.tasks[context.id] ?? false;
       context.isCopied = false;
+      
+      // Step 4 Explanation State Initialization
       context.isExplaining = false;
       context.isAnalyzingExplanation = false;
       context.explanationText = '';
-      context.explanationError = null;
+      context.formattedExplanationHtml = '';
+      context.explanationError = '';
+
+      // Step 5 Personalizer State Initialization
+      context.isPersonalizing = false;
+      context.isCustomizing = false;
+      context.isPersonalized = false;
+      context.userInstruction = '';
+      context.personalizeError = '';
+      context.activeCodeText = context.rawCodeText || '';
+
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
 
       if (context.highlightLines) {
