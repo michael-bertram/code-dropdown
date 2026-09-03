@@ -68,6 +68,21 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
     const characterCount = cleanRawText.replace(/\r/g, '').length;
 
+    // Helper: Evaluates whether a line number falls within the highlightLines expression (e.g. "3, 5-8")
+    const isLineHighlighted = (lineNumber, highlightExpression) => {
+        if (!highlightExpression) return false;
+        const ranges = highlightExpression.split(',');
+        for (const range of ranges) {
+            const parts = range.split('-').map((n) => parseInt(n.trim(), 10));
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                if (lineNumber >= parts[0] && lineNumber <= parts[1]) return true;
+            } else if (parts.length === 1 && !isNaN(parts[0])) {
+                if (lineNumber === parts[0]) return true;
+            }
+        }
+        return false;
+    };
+
     // 2. ABILITIES API DISPATCHER (Step 2 Implementation)
     const handleAutoFill = async () => {
         if (!cleanRawText || !cleanRawText.trim()) {
@@ -262,9 +277,18 @@ export default function Edit({ attributes, setAttributes, clientId }) {
                         
                         {showLineNumbers && (
                             <div className="line-numbers-gutter" aria-hidden="true">
-                                {Array.from({ length: lineCount }).map((_, index) => (
-                                    <span key={index}>{index + 1}</span>
-                                ))}
+                                {Array.from({ length: lineCount }).map((_, index) => {
+                                    const lineNum = index + 1;
+                                    const highlighted = isLineHighlighted(lineNum, highlightLines);
+                                    return (
+                                        <span 
+                                            key={index} 
+                                            className={highlighted ? 'is-highlighted' : ''}
+                                        >
+                                            {lineNum}
+                                        </span>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

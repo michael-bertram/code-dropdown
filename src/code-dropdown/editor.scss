@@ -1,3 +1,6 @@
+/* Import Prism Tomorrow Theme for Syntax Coloring */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css');
+
 /* ==========================================================================
    BACKEND EDITOR PANEL EXCLUSIVE SEAMLESS LAYOUTS
    ========================================================================== */
@@ -209,4 +212,65 @@
         background: #ffffff;
         z-index: 95;
     }
+}
+
+/* ==========================================================================
+   PRISM SYNTAX COLORING & LINE HIGHLIGHTING STYLES
+   ========================================================================== */
+
+
+/* Line Numbers Gutter Styling */
+.wp-block-wpe-code-dropdown-editor .line-numbers-gutter,
+.wp-block-wpe-code-dropdown .line-numbers-gutter {
+    display: flex;
+    flex-direction: column;
+    padding-right: 12px;
+    margin-right: 12px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    user-select: none;
+    opacity: 0.5;
+    font-family: monospace;
+    font-size: var(--editor-code-font-size, 14px);
+}
+
+/* Active Line Highlighting Overlay */
+.wp-block-wpe-code-dropdown-editor .line-numbers-gutter span.is-highlighted,
+.wp-block-wpe-code-dropdown .panel-content pre .line-highlight {
+    background-color: rgba(255, 235, 59, 0.2); /* Soft Yellow Highlight */
+    border-left: 3px solid #ffeb3b;
+    font-weight: bold;
+    opacity: 1;
+}
+
+/* Language Badge Colors */
+.code-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: #333;
+    color: #fff;
+}
+
+.code-badge.lang-css {
+    background-color: #264de4; /* CSS Blue */
+    color: #ffffff;
+}
+
+.code-badge.lang-php {
+    background-color: #4f5d95; /* PHP Purple */
+    color: #ffffff;
+}
+
+.code-badge.lang-js,
+.code-badge.lang-javascript {
+    background-color: #f7df1e; /* JS Yellow */
+    color: #000000;
+}
+
+.code-badge.lang-json {
+    background-color: #292929;
+    color: #00e676;
 }
