@@ -409,64 +409,185 @@ add_action( 'wp_abilities_api_init', function() {
 } );
 
 /**
- * Execution callback for code explanation ability.
+ * Execution callback for Step 4 code explanation ability.
+ * Explicitly boots the AI Client Connector during front-end REST API execution.
  *
- * @param array $args Sanitized inputs.
- * @return array|WP_Error Response payload or error object.
+ * @param array $args Sanitized inputs matching input_schema.
+ * @return array|WP_Error Output array containing 'explanation' string.
  */
 if ( ! function_exists( 'code_dropdown_execute_explain_ability' ) ) {
 	function code_dropdown_execute_explain_ability( array $args ) {
-		$raw_code = isset( $args['code'] ) && is_string( $args['code'] ) ? $args['code'] : '';
-		$code     = sanitize_textarea_field( $raw_code );
-		$language = isset( $args['language'] ) ? sanitize_text_field( $args['language'] ) : 'code';
+error_log( '[Code Dropdown AI] Ability invoked with raw args: ' . wp_json_encode( $args ) );
 
-		if ( '' === trim( $code ) ) {
-			return new WP_Error(
-				'empty_code',
-				__( 'Code snippet cannot be empty.', 'code-dropdown' ),
-				array( 'status' => 400 )
-			);
-		}
 
-		$prompt = "You are an expert technical instructor. Explain what this {$language} code snippet does in 3 clear, bulleted points. Keep each point under 20 words. No code blocks or preamble.\n\nCode:\n{$code}";
+// 1. Prepare and sanitise the code input.
 
-		if ( function_exists( 'wp_ai_client_prompt' ) ) {
-			try {
-				$ai_response = wp_ai_client_prompt( $prompt );
+$raw_input = isset( $args['code'] ) && is_string( $args['code'] )
+	? $args['code']
+	: '';
 
-				if ( ! is_wp_error( $ai_response ) ) {
-					$text = '';
-					if ( is_string( $ai_response ) ) {
-						$text = $ai_response;
-					} elseif ( is_object( $ai_response ) ) {
-						if ( method_exists( $ai_response, 'generate' ) ) {
-							$text = (string) $ai_response->generate();
-						} elseif ( method_exists( $ai_response, 'get_text' ) ) {
-							$text = (string) $ai_response->get_text();
-						} elseif ( method_exists( $ai_response, '__toString' ) ) {
-							$text = (string) $ai_response;
-						}
-					}
+$decoded = html_entity_decode(
+	$raw_input,
+	ENT_QUOTES | ENT_HTML5,
+	'UTF-8'
+);
 
-					if ( ! empty( trim( $text ) ) ) {
-						return array( 'explanation' => sanitize_textarea_field( $text ) );
-					}
-				}
-			} catch ( Exception $e ) {
-				// Fall through to default response
-			}
-		}
+$decoded = html_entity_decode(
+	$decoded,
+	ENT_QUOTES | ENT_HTML5,
+	'UTF-8'
+);
 
-		// Fallback response when AI provider is offline
-		return array(
-			'explanation' => sprintf(
-				/* translators: %s: programming language */
-				__( "• Analyzes the provided %s code snippet.\n• Executes functional execution logic.\n• Handles input/output operations.", 'code-dropdown' ),
-				esc_html( $language )
+$code = wp_unslash( trim( $decoded ) );
+
+$language = isset( $args['language'] )
+	? sanitize_text_field( $args['language'] )
+	: 'code';
+
+if ( empty( $code ) ) {
+	return new WP_Error(
+		'empty_code',
+		__( 'Code snippet cannot be empty.', 'code-dropdown' ),
+		array( 'status' => 400 )
+	);
+}
+
+
+// 2. Build the AI prompt.
+
+$prompt = "You are an expert technical instructor.\n```
+
+Analyze the following {$language} code snippet and explain what it does in exactly 3 clear, concise bullet points.
+
+Requirements:
+
+* Maximum 25 words per bullet.
+* Focus on the actual functions, variables, conditions and logic present in the code.
+* Do not invent functionality that is not present.
+* Do not include a preamble.
+* Do not use markdown code fences.
+* Return only the 3 bullet points.
+
+Code Snippet:
+{$code}";
+
+// 3. Check that the WordPress AI Client is available.
+if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+	error_log(
+		'[Code Dropdown AI Error] wp_ai_client_prompt() is not available.'
+	);
+
+	return new WP_Error(
+		'ai_client_unavailable',
+		__(
+			'The WordPress AI Client is not available.',
+			'code-dropdown'
+		),
+		array( 'status' => 503 )
+	);
+}
+
+// 4. Generate the response using the current WordPress AI Client API.
+// wp_ai_client_prompt() returns a WP_AI_Client_Prompt_Builder.
+// The builder uses generate_text() as the text-generation method.
+try {
+	error_log(
+		'[Code Dropdown AI] Calling wp_ai_client_prompt()->generate_text()'
+	);
+
+	$result = wp_ai_client_prompt( $prompt )->generate_text();
+
+	/*
+	 * generate_text() returns WP_Error when generation fails.
+	 */
+	if ( is_wp_error( $result ) ) {
+		error_log(
+			'[Code Dropdown AI Error] generate_text() failed: ' .
+			$result->get_error_message()
+		);
+
+		error_log(
+			'[Code Dropdown AI Error] Error code: ' .
+			$result->get_error_code()
+		);
+
+		return $result;
+	}
+
+	// 5. Validate the generated response.
+	$explanation = is_string( $result )
+		? trim( $result )
+		: '';
+
+	if ( empty( $explanation ) ) {
+		error_log(
+			'[Code Dropdown AI Error] generate_text() returned an empty response.'
+		);
+
+		return new WP_Error(
+			'ai_empty_response',
+			__(
+				'The AI provider returned an empty response.',
+				'code-dropdown'
 			),
+			array( 'status' => 502 )
 		);
 	}
+
+	error_log(
+		'[Code Dropdown AI Success] AI explanation generated successfully.'
+	);
+
+	error_log(
+		'[Code Dropdown AI Response] ' . $explanation
+	);
+
+	return array(
+		'explanation' => sanitize_textarea_field( $explanation ),
+	);
+
+} catch ( Throwable $e ) {
+	error_log(
+		'[Code Dropdown AI Exception] ' . $e->getMessage()
+	);
+
+	return new WP_Error(
+		'ai_generation_exception',
+		__(
+			'An unexpected error occurred while generating the explanation.',
+			'code-dropdown'
+		),
+		array(
+			'status' => 500,
+		)
+	);
 }
+
+}
+
+}
+
+/* Ensure Direct REST Fallback Route Flushes Cleanly */
+add_action( 'rest_api_init', function() {
+	register_rest_route(
+		'code-dropdown/v1',
+		'/explain-code',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$params   = $request->get_json_params();
+				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+
+				return code_dropdown_execute_explain_ability( array(
+					'code'     => (string) $raw_code,
+					'language' => (string) $language,
+				) );
+			},
+			'permission_callback' => '__return_true',
+		)
+	);
+} );
 
 /* Fallback REST route for explain-code */
 add_action( 'rest_api_init', function() {
