@@ -1,7 +1,7 @@
 <?php
 /**
  * Render Template: Code Dropdown Block
- * Integrated with Interactivity API & Abilities API Step 4 ("Explain This Code")
+ * Integrated with Interactivity API & Abilities API Step 5 ("Adapt to My Setup")
  */
 
 $persistent_id   = ! empty( $attributes['id'] ) ? $attributes['id'] : wp_unique_id( 'wpe-code-' );
@@ -102,6 +102,12 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 		'isAnalyzingExplanation'  => false,
 		'explanationText'         => '',
 		'explanationError'        => '',
+		'isPersonalizing'         => false,
+		'isCustomizing'           => false,
+		'isPersonalized'          => false,
+		'userInstruction'         => '',
+		'personalizeError'        => '',
+		'activeCodeText'          => esc_textarea( $raw_code_text ),
 		'codeLanguage'            => esc_attr( $code_lang ),
 		'highlightLines'          => esc_attr( $highlight_lines ),
 		'rawCodeText'             => esc_textarea( $raw_code_text ),
@@ -123,6 +129,15 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 			</div>
 
 			<div class="code-actions">
+				<button 
+					class="customize-button" 
+					data-wp-on--click="actions.togglePersonalizeDrawer"
+					data-wp-class--active="context.isPersonalizing"
+					aria-label="<?php esc_attr_e( 'Adapt code to my setup', 'code-dropdown' ); ?>"
+				>
+					<span><?php esc_html_e( 'Adapt', 'code-dropdown' ); ?></span>
+				</button>
+
 				<button 
 					class="explain-button" 
 					data-wp-on--click="actions.explainCode"
@@ -148,13 +163,13 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 				<div class="panel-content-flex-wrapper">
 					<?php echo $line_gutter_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<div class="panel-content">
-						<pre><code class="language-<?php echo esc_attr( $selected_lang ); ?>"><?php echo esc_html( $raw_code_text ); ?></code></pre>
+						<pre><code class="language-<?php echo esc_attr( $selected_lang ); ?>" data-wp-text="context.activeCodeText"><?php echo esc_html( $raw_code_text ); ?></code></pre>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Direct Bindings for Explanation Drawer -->
+		<!-- Direct Bindings for Explanation Drawer (Step 4) -->
 		<div 
 			class="code-explanation-drawer" 
 			data-wp-bind--hidden="!context.isExplaining"
@@ -171,11 +186,47 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 			</div>
 		</div>
 
+		<!-- Direct Bindings for Code Personalizer Drawer (Step 5) -->
+		<div 
+			class="code-personalizer-drawer" 
+			data-wp-bind--hidden="!context.isPersonalizing"
+		>
+			<div class="personalizer-inner">
+				<h4><?php esc_html_e( 'Adapt to My Setup', 'code-dropdown' ); ?></h4>
+				<div class="personalizer-form">
+					<input 
+						type="text" 
+						class="personalizer-input" 
+						placeholder="<?php esc_attr_e( 'e.g. Change table prefix to wp_custom_ or set $api_key = "xyz"', 'code-dropdown' ); ?>"
+						data-wp-bind--value="context.userInstruction"
+						data-wp-on--input="actions.handleCustomInstructionInput"
+					/>
+					<button 
+						class="personalizer-submit-btn" 
+						data-wp-on--click="actions.customizeCode"
+						data-wp-bind--disabled="context.isCustomizing"
+					>
+						<span data-wp-bind--hidden="context.isCustomizing"><?php esc_html_e( 'Apply Changes', 'code-dropdown' ); ?></span>
+						<span data-wp-bind--hidden="!context.isCustomizing"><?php esc_html_e( 'Adapting...', 'code-dropdown' ); ?></span>
+					</button>
+				</div>
+
+				<div class="personalizer-error" data-wp-bind--hidden="!context.personalizeError" data-wp-text="context.personalizeError"></div>
+
+				<div class="personalizer-reset-wrapper" data-wp-bind--hidden="!context.isPersonalized">
+					<span><?php esc_html_e( 'Currently showing customized code.', 'code-dropdown' ); ?></span>
+					<button class="personalizer-reset-btn" data-wp-on--click="actions.resetCode">
+						<?php esc_html_e( 'Reset to Original Snippet', 'code-dropdown' ); ?>
+					</button>
+				</div>
+			</div>
+		</div>
+
 		<div class="code-footer">
 			<div class="code-analytics-meta">
 				<span><?php echo esc_html( sprintf( _n( '%d line', '%d lines', $line_count, 'code-dropdown' ), $line_count ) ); ?></span>
 				<span class="meta-divider">•</span>
-				<span><?php echo esc_html( sprintf( __( '%s chars', 'code-dropdown' ), number_format( $character_count ) ) ); ?></span>
+				<span><?php echo esc_html( sprintf( __( '%s chars', 'code-dropdown' ), number_format( $character_count ) ), 'code-dropdown' ); ?></span>
 			</div>
 			
 			<button data-wp-on--click="actions.toggleComplete" data-wp-class--is-completed="context.isComplete">
