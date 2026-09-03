@@ -610,3 +610,152 @@ add_action( 'rest_api_init', function() {
 		)
 	);
 } );
+
+/* ==========================================================================
+   ABILITY - CUSTOMIZE CODE / ADAPT TO MY SETUP
+   ========================================================================== */
+
+add_action( 'wp_abilities_api_init', function() {
+	if ( ! function_exists( 'wp_register_ability' ) ) {
+		return;
+	}
+
+	wp_register_ability(
+		'code-dropdown/customize-code',
+		array(
+			'category'            => 'code-dropdown-tools',
+			'label'               => __( 'Adapt Code to Setup', 'code-dropdown' ),
+			'description'         => __( 'Replaces placeholder variables and config parameters in a code snippet with user-provided setup values.', 'code-dropdown' ),
+			'show_in_rest'        => true,
+			'show_in_mcp'         => true,
+			'permission_callback' => '__return_true', // Publicly readable for front-end reader customization
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'code'            => array(
+						'type'        => 'string',
+						'description' => __( 'The original code snippet.', 'code-dropdown' ),
+						'minLength'   => 1,
+					),
+					'userInstruction' => array(
+						'type'        => 'string',
+						'description' => __( 'Customization instructions provided by the user.', 'code-dropdown' ),
+						'minLength'   => 1,
+					),
+					'language'        => array(
+						'type'        => 'string',
+						'description' => __( 'Programming language token.', 'code-dropdown' ),
+					),
+				),
+				'required'             => array( 'code', 'userInstruction' ),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'personalizedCode' => array(
+						'type'        => 'string',
+						'description' => __( 'The transformed code snippet.', 'code-dropdown' ),
+					),
+				),
+				'required'             => array( 'personalizedCode' ),
+				'additionalProperties' => false,
+			),
+			'execute_callback'    => 'code_dropdown_execute_customize_ability',
+		)
+	);
+} );
+
+if ( ! function_exists( 'code_dropdown_execute_customize_ability' ) ) {
+	function code_dropdown_execute_customize_ability( array $args ) {
+		$raw_code        = isset( $args['code'] ) && is_string( $args['code'] ) ? $args['code'] : '';
+		$user_instruction = isset( $args['userInstruction'] ) && is_string( $args['userInstruction'] ) ? $args['userInstruction'] : '';
+		$language        = isset( $args['language'] ) ? sanitize_text_field( $args['language'] ) : 'code';
+
+		$decoded     = html_entity_decode( $raw_code, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$code        = wp_unslash( trim( $decoded ) );
+		$instruction = sanitize_text_field( $user_instruction );
+
+		if ( empty( $code ) || empty( $instruction ) ) {
+			return new WP_Error(
+				'invalid_input',
+				__( 'Code snippet and user instruction cannot be empty.', 'code-dropdown' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$prompt = "You are an expert developer assistant. Refactor the following {$language} code snippet according to these exact setup requirements: '{$instruction}'.
+Return ONLY the updated code snippet inside plain text (no markdown backticks, no explanatory commentary).
+
+Original Code:
+{$code}";
+
+		if ( function_exists( 'wp_ai_client_prompt' ) ) {
+			try {
+				$result = wp_ai_client_prompt( $prompt )->generate_text();
+
+				if ( ! is_wp_error( $result ) && ! empty( $result ) ) {
+					$clean_code = trim( preg_replace( '/^```[a-z]*|```$/m', '', trim( (string) $result ) ) );
+					return array(
+						'personalizedCode' => esc_textarea( $clean_code ),
+					);
+				}
+			} catch ( Throwable $e ) {
+				error_log( '[Code Dropdown Customization Exception] ' . $e->getMessage() );
+			}
+		}
+
+		// Local Heuristic Fallback Pair Replacement
+		$customized_code = $code;
+		if ( preg_match_all( '/([a-zA-Z0-9_]+)\s*=\s*[\'"]?([^\'"\s;]+)[\'"]?/', $instruction, $matches, PREG_SET_ORDER ) ) {
+			foreach ( $matches as $match ) {
+				$key             = $match[1];
+				$val             = $match[2];
+				$customized_code = preg_replace( '/\b' . preg_quote( $key, '/' ) . '\b/', $val, $customized_code );
+			}
+		}
+
+		return array(
+			'personalizedCode' => esc_textarea( $customized_code ),
+		);
+	}
+}
+
+// Add this route block inside rest_api_init in code-dropdown-block.php
+register_rest_route(
+	'code-dropdown/v1',
+	'/customize-code',
+	array(
+		'methods'             => 'POST',
+		'callback'            => function( WP_REST_Request $request ) {
+			$params      = $request->get_json_params();
+			$raw_code    = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+			$instruction = is_array( $params ) && isset( $params['userInstruction'] ) ? $params['userInstruction'] : $request->get_param( 'userInstruction' );
+			$language    = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+
+			return code_dropdown_execute_customize_ability( array(
+				'code'            => (string) $raw_code,
+				'userInstruction' => (string) $instruction,
+				'language'        => (string) $language,
+			) );
+		},
+		'permission_callback' => '__return_true',
+		'args'                => array(
+			'code'            => array(
+				'required'          => true,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_textarea_field',
+			),
+			'userInstruction' => array(
+				'required'          => true,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'language'        => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		),
+	)
+);
