@@ -59,70 +59,76 @@ const { state } = store('wpe', {
           }),
         });
       } catch (err) {
-        // Guest fallback via localStorage
+        // Silent catch for guest users
       }
     },
 
     /**
-     * Step 4: Explain Code Generator Action
+     * Resilient Explain Code Action with Dual-Path Routing
      */
-    *explainCode() {
-      const context = getContext();
+*explainCode() {
+  const context = getContext();
 
-      // Toggle drawer off if already open
-      if (context.isExplaining && context.explanationText) {
-        context.isExplaining = false;
-        return;
+  // Toggle drawer off if already open and populated
+  if (context.isExplaining && context.explanationText) {
+    context.isExplaining = false;
+    return;
+  }
+
+  context.isExplaining = true;
+
+  if (context.explanationText) {
+    return;
+  }
+
+  context.isAnalyzingExplanation = true;
+  context.explanationError = '';
+
+  const payload = JSON.stringify({
+    code: context.rawCodeText || '',
+    language: context.codeLanguage || 'PHP',
+  });
+
+  let response = null;
+
+  try {
+    const directRes = yield fetch('/wp-json/code-dropdown/v1/explain-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+    });
+
+    if (directRes.ok) {
+      response = yield directRes.json();
+    }
+  } catch (err) {
+    // Fall through
+  }
+
+  if (!response) {
+    try {
+      const abilityRes = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/explain-code/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      });
+
+      if (abilityRes.ok) {
+        response = yield abilityRes.json();
       }
+    } catch (err) {
+      // Both paths failed
+    }
+  }
 
-      context.isExplaining = true;
+  if (response && response.explanation) {
+    context.explanationText = response.explanation;
+  } else {
+    context.explanationError = 'Unable to generate code explanation at this time.';
+  }
 
-      // Avoid re-fetching if explanation is already cached in context
-      if (context.explanationText) {
-        return;
-      }
-
-      context.isAnalyzingExplanation = true;
-      context.explanationError = null;
-
-      try {
-        let response;
-        try {
-          // Primary Path: Abilities API REST Controller
-          const res = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/explain-code/run', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              code: context.rawCodeText || '',
-              language: context.codeLanguage || 'PHP',
-            }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          response = yield res.json();
-        } catch (primaryErr) {
-          // Fallback Path: Direct Direct Plugin REST Route
-          const fallbackRes = yield fetch('/wp-json/code-dropdown/v1/explain-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              code: context.rawCodeText || '',
-              language: context.codeLanguage || 'PHP',
-            }),
-          });
-          response = yield fallbackRes.json();
-        }
-
-        if (response && response.explanation) {
-          context.explanationText = response.explanation;
-        } else {
-          throw new Error('Invalid explanation payload');
-        }
-      } catch (err) {
-        context.explanationError = 'Unable to generate explanation right now.';
-      } finally {
-        context.isAnalyzingExplanation = false;
-      }
-    },
+  context.isAnalyzingExplanation = false;
+},
 
     async copyToClipboard() {
       const context = getContext();

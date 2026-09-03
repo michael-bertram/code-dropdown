@@ -36,7 +36,6 @@ foreach ( $inner_blocks as $inner_block ) {
 	}
 }
 
-// Extract line numbers & plain text code for Interactivity API context
 $line_gutter_html = '';
 $character_count  = 0;
 $line_count       = 1;
@@ -102,7 +101,7 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 		'isExplaining'            => false,
 		'isAnalyzingExplanation'  => false,
 		'explanationText'         => '',
-		'explanationError'        => null,
+		'explanationError'        => '',
 		'codeLanguage'            => esc_attr( $code_lang ),
 		'highlightLines'          => esc_attr( $highlight_lines ),
 		'rawCodeText'             => esc_textarea( $raw_code_text ),
@@ -124,7 +123,6 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 			</div>
 
 			<div class="code-actions">
-				<!-- Step 4: Explain This Code Action Button -->
 				<button 
 					class="explain-button" 
 					data-wp-on--click="actions.explainCode"
@@ -134,13 +132,11 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 					<span><?php esc_html_e( 'Explain', 'code-dropdown' ); ?></span>
 				</button>
 
-				<!-- Copy Action Button -->
 				<button class="copy-button" data-wp-on--click="actions.copyToClipboard" data-wp-class--copied="context.isCopied" aria-label="<?php esc_attr_e( 'Copy code to clipboard', 'code-dropdown' ); ?>">
 					<svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
 					<svg class="icon-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 				</button>
 
-				<!-- Accordion Toggle Button -->
 				<button class="toggle-button" data-wp-on--click="actions.toggleOpen">
 					<span data-wp-text="context.toggleText"></span>
 				</button>
@@ -158,26 +154,20 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 			</div>
 		</div>
 
-		<!-- Step 4: AI Explanation Drawer Container -->
+		<!-- Direct Bindings for Explanation Drawer -->
 		<div 
 			class="code-explanation-drawer" 
 			data-wp-bind--hidden="!context.isExplaining"
 		>
 			<div class="explanation-inner">
-				<template data-wp-if="context.isAnalyzingExplanation">
-					<div class="explanation-loading">
-						<span class="spinner-icon"></span>
-						<span><?php esc_html_e( 'Analyzing code logic...', 'code-dropdown' ); ?></span>
-					</div>
-				</template>
+				<div class="explanation-loading" data-wp-bind--hidden="!context.isAnalyzingExplanation">
+					<span class="spinner-icon"></span>
+					<span><?php esc_html_e( 'Analyzing code logic...', 'code-dropdown' ); ?></span>
+				</div>
 
-				<template data-wp-if="!context.isAnalyzingExplanation">
-					<div class="explanation-text" data-wp-text="context.explanationText"></div>
-				</template>
+				<div class="explanation-text" data-wp-bind--hidden="context.isAnalyzingExplanation" data-wp-text="context.explanationText"></div>
 
-				<template data-wp-if="context.explanationError">
-					<div class="explanation-error" data-wp-text="context.explanationError"></div>
-				</template>
+				<div class="explanation-error" data-wp-bind--hidden="!context.explanationError" data-wp-text="context.explanationError"></div>
 			</div>
 		</div>
 
