@@ -84,7 +84,7 @@ add_action( 'wp_abilities_api_categories_init', function() {
 } );
 
 /**
- * Register Step 2 Ability: Auto-Fill Block Metadata & Syntax Formatting.
+ * Register Ability: Auto-Fill Block Metadata & Syntax Formatting.
  */
 add_action( 'wp_abilities_api_init', function() {
 	if ( ! function_exists( 'wp_register_ability' ) ) {
@@ -273,6 +273,87 @@ add_action( 'rest_api_init', function() {
 			'permission_callback' => function() {
 				return current_user_can( 'edit_posts' );
 			},
+		)
+	);
+} );
+
+/* ==========================================================================
+   USER PERSISTENCE REST ENDPOINTS & META
+   ========================================================================== */
+
+/**
+ * Register user meta for completed code blocks.
+ */
+add_action( 'init', function() {
+	register_meta(
+		'user',
+		'_wpe_completed_blocks',
+		array(
+			'type'          => 'object',
+			'description'   => 'Track completed code block IDs per user.',
+			'single'        => true,
+			'show_in_rest'  => array(
+				'schema' => array(
+					'type'                 => 'object',
+					'additionalProperties' => array( 'type' => 'boolean' ),
+				),
+			),
+			'auth_callback' => function() {
+				return current_user_can( 'read' );
+			},
+		)
+	);
+} );
+
+/**
+ * REST API route to toggle block completion state for logged-in users.
+ */
+add_action( 'rest_api_init', function() {
+	register_rest_route(
+		'code-dropdown/v1',
+		'/toggle-complete',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$user_id  = get_current_user_id();
+				$block_id = sanitize_text_field( $request->get_param( 'block_id' ) );
+				$status   = (bool) $request->get_param( 'status' );
+
+				if ( ! $user_id ) {
+					return new WP_Error( 'unauthorized', __( 'User not logged in.', 'code-dropdown' ), array( 'status' => 401 ) );
+				}
+
+				if ( empty( $block_id ) ) {
+					return new WP_Error( 'invalid_id', __( 'Block ID is required.', 'code-dropdown' ), array( 'status' => 400 ) );
+				}
+
+				$saved_tasks = get_user_meta( $user_id, '_wpe_completed_blocks', true );
+				if ( ! is_array( $saved_tasks ) ) {
+					$saved_tasks = array();
+				}
+
+				$saved_tasks[ $block_id ] = $status;
+				update_user_meta( $user_id, '_wpe_completed_blocks', $saved_tasks );
+
+				return array(
+					'success' => true,
+					'tasks'   => $saved_tasks,
+				);
+			},
+			'permission_callback' => function() {
+				return is_user_logged_in();
+			},
+			'args'                => array(
+				'block_id' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'status'   => array(
+					'required' => true,
+					'type'     => 'boolean',
+				),
+			),
 		)
 	);
 } );

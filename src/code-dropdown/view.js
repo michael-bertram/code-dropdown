@@ -1,4 +1,4 @@
-import { store, getContext, getElement } from '@wordpress/interactivity'; // Added getElement
+import { store, getContext, getElement } from '@wordpress/interactivity';
 
 const STORAGE_KEY = 'wpe_tasks';
 
@@ -28,27 +28,52 @@ const { state } = store('wpe', {
   },
 
   actions: {
+    /**
+     * Accordion open/close toggle
+     */
     toggleOpen() {
       const context = getContext();
       context.isOpen = !context.isOpen;
       context.toggleText = context.isOpen ? context.closeText : context.openText;
     },
 
-    toggleComplete() {
+    /**
+     * Step 3: Persistent Completion Toggle
+     * Syncs state instantly in localStorage and asynchronously with WordPress user_meta via REST API.
+     */
+    *toggleComplete() {
       const context = getContext();
       context.isComplete = !context.isComplete;
-      context.completeText = context.isComplete ? '✓' : 'Mark as complete'; // Kept cohesive with init
+      context.completeText = context.isComplete ? '✓' : 'Mark as complete';
 
+      // 1. Optimistic Local Update
       state.tasks = {
         ...state.tasks,
         [context.id]: context.isComplete,
       };
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+
+      // 2. Server-Side Persistence for Authenticated Users
+      try {
+        yield fetch('/wp-json/code-dropdown/v1/toggle-complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': window.wpApiSettings?.nonce || '',
+          },
+          body: JSON.stringify({
+            block_id: context.id,
+            status: context.isComplete,
+          }),
+        });
+      } catch (err) {
+        // Silent catch: falls back safely to localStorage for guests/offline states
+      }
     },
 
     /**
-     * Copy function utilizing Interactivity API's getElement()
+     * Clipboard Copy Action
      */
     async copyToClipboard() {
       const context = getContext();
@@ -73,10 +98,7 @@ const { state } = store('wpe', {
             document.body.removeChild(textarea);
           }
 
-          // Trigger visual icon change state
           context.isCopied = true;
-
-          // Revert icon back to normal after 2 seconds
           setTimeout(() => {
             context.isCopied = false;
           }, 2000);
@@ -110,8 +132,25 @@ const { state } = store('wpe', {
       }
 
       context.isComplete = state.tasks[context.id] ?? false;
-      context.isCopied = false; // Initialized tracking variable
+      context.isCopied = false;
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
+
+      // Parse highlight line ranges (e.g. "3, 5-8") into active line indexes
+      if (context.highlightLines) {
+        const targetLines = new Set();
+        const ranges = context.highlightLines.split(',');
+
+        ranges.forEach((range) => {
+          const parts = range.split('-').map((num) => parseInt(num.trim(), 10));
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            for (let i = parts[0]; i <= parts[1]; i++) targetLines.add(i);
+          } else if (parts.length === 1 && !isNaN(parts[0])) {
+            targetLines.add(parts[0]);
+          }
+        });
+
+        context.highlightedNumbers = Array.from(targetLines);
+      }
     },
   },
 });
