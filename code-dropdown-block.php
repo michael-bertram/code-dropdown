@@ -31,7 +31,7 @@ add_action( 'wp_enqueue_scripts', function() {
 		null,
 		true
 	);
-});
+} );
 
 /**
  * Enqueue Prism.js assets on the front-end for syntax highlighting.
@@ -83,9 +83,10 @@ add_action( 'wp_abilities_api_categories_init', function() {
 	}
 } );
 
-/**
- * Register Ability: Auto-Fill Block Metadata & Syntax Formatting.
- */
+/* ==========================================================================
+   STEP 2: ABILITY - AUTO-FILL METADATA & SYNTAX
+   ========================================================================== */
+
 add_action( 'wp_abilities_api_init', function() {
 	if ( ! function_exists( 'wp_register_ability' ) ) {
 		return;
@@ -131,12 +132,6 @@ add_action( 'wp_abilities_api_init', function() {
 	);
 } );
 
-/**
- * Execution callback for metadata auto-fill.
- *
- * @param array $args Input parameters.
- * @return array|WP_Error Output payload matching output_schema or WP_Error.
- */
 if ( ! function_exists( 'code_dropdown_execute_autofill_ability' ) ) {
 	function code_dropdown_execute_autofill_ability( array $args ) {
 		$raw_code = isset( $args['code'] ) && is_string( $args['code'] ) ? $args['code'] : '';
@@ -162,39 +157,28 @@ Snippet:
 
 		if ( function_exists( 'wp_ai_client_prompt' ) ) {
 			try {
-				$ai_response = wp_ai_client_prompt(
+				$builder = wp_ai_client_prompt(
 					$prompt,
 					array(
 						'response_format' => array( 'type' => 'json_object' ),
 					)
 				);
 
-				if ( ! is_wp_error( $ai_response ) ) {
-					$raw_json = '';
-					if ( is_string( $ai_response ) ) {
-						$raw_json = $ai_response;
-					} elseif ( is_object( $ai_response ) ) {
-						if ( method_exists( $ai_response, 'generate' ) ) {
-							$generated = $ai_response->generate();
-							$raw_json  = is_string( $generated ) ? $generated : (string) $generated;
-						} elseif ( method_exists( $ai_response, 'get_text' ) ) {
-							$raw_json = (string) $ai_response->get_text();
-						} elseif ( method_exists( $ai_response, '__toString' ) ) {
-							$raw_json = (string) $ai_response;
+				if ( is_object( $builder ) && method_exists( $builder, 'generate_text' ) ) {
+					$result = $builder->generate_text();
+					if ( ! is_wp_error( $result ) ) {
+						$clean_json = trim( preg_replace( '/^```(json)?|```$/m', '', trim( (string) $result ) ) );
+						$data       = json_decode( $clean_json, true );
+
+						if ( is_array( $data ) && isset( $data['codeLanguage'], $data['filename'], $data['title'] ) ) {
+							return array(
+								'codeLanguage'    => sanitize_text_field( $data['codeLanguage'] ),
+								'filename'        => sanitize_file_name( $data['filename'] ),
+								'title'           => sanitize_text_field( $data['title'] ),
+								'highlightLines'  => isset( $data['highlightLines'] ) ? sanitize_text_field( $data['highlightLines'] ) : '',
+								'showLineNumbers' => isset( $data['showLineNumbers'] ) ? (bool) $data['showLineNumbers'] : true,
+							);
 						}
-					}
-
-					$clean_json = trim( preg_replace( '/^```(json)?|```$/m', '', trim( $raw_json ) ) );
-					$data       = json_decode( $clean_json, true );
-
-					if ( is_array( $data ) && isset( $data['codeLanguage'], $data['filename'], $data['title'] ) ) {
-						return array(
-							'codeLanguage'    => sanitize_text_field( $data['codeLanguage'] ),
-							'filename'        => sanitize_file_name( $data['filename'] ),
-							'title'           => sanitize_text_field( $data['title'] ),
-							'highlightLines'  => isset( $data['highlightLines'] ) ? sanitize_text_field( $data['highlightLines'] ) : '',
-							'showLineNumbers' => isset( $data['showLineNumbers'] ) ? (bool) $data['showLineNumbers'] : true,
-						);
 					}
 				}
 			} catch ( Exception $e ) {
@@ -202,12 +186,11 @@ Snippet:
 			}
 		}
 
-		// Smart Fallback Parser (Runs offline or when AI provider key is not configured)
 		$trimmed_code = trim( $code );
 		$lines_count  = count( explode( "\n", $trimmed_code ) );
 
 		if ( ( str_starts_with( $trimmed_code, '{' ) && str_ends_with( $trimmed_code, '}' ) ) || 
-		     ( str_starts_with( $trimmed_code, '[' ) && str_ends_with( $trimmed_code, ']' ) ) ) {
+			 ( str_starts_with( $trimmed_code, '[' ) && str_ends_with( $trimmed_code, ']' ) ) ) {
 			$json_test = json_decode( $trimmed_code, true );
 			return array(
 				'codeLanguage'    => 'JSON',
@@ -258,32 +241,10 @@ Snippet:
 	}
 }
 
-/* Direct REST API Fallback Route */
-add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/auto-fill-metadata',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$params   = $request->get_json_params();
-				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-				return code_dropdown_execute_autofill_ability( array( 'code' => (string) $raw_code ) );
-			},
-			'permission_callback' => function() {
-				return current_user_can( 'edit_posts' );
-			},
-		)
-	);
-} );
-
 /* ==========================================================================
    USER PERSISTENCE REST ENDPOINTS & META
    ========================================================================== */
 
-/**
- * Register user meta for completed code blocks.
- */
 add_action( 'init', function() {
 	register_meta(
 		'user',
@@ -305,61 +266,8 @@ add_action( 'init', function() {
 	);
 } );
 
-/**
- * REST API route to toggle block completion state for logged-in users.
- */
-add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/toggle-complete',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$user_id  = get_current_user_id();
-				$block_id = sanitize_text_field( $request->get_param( 'block_id' ) );
-				$status   = (bool) $request->get_param( 'status' );
-
-				if ( ! $user_id ) {
-					return new WP_Error( 'unauthorized', __( 'User not logged in.', 'code-dropdown' ), array( 'status' => 401 ) );
-				}
-
-				if ( empty( $block_id ) ) {
-					return new WP_Error( 'invalid_id', __( 'Block ID is required.', 'code-dropdown' ), array( 'status' => 400 ) );
-				}
-
-				$saved_tasks = get_user_meta( $user_id, '_wpe_completed_blocks', true );
-				if ( ! is_array( $saved_tasks ) ) {
-					$saved_tasks = array();
-				}
-
-				$saved_tasks[ $block_id ] = $status;
-				update_user_meta( $user_id, '_wpe_completed_blocks', $saved_tasks );
-
-				return array(
-					'success' => true,
-					'tasks'   => $saved_tasks,
-				);
-			},
-			'permission_callback' => function() {
-				return is_user_logged_in();
-			},
-			'args'                => array(
-				'block_id' => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'status'   => array(
-					'required' => true,
-					'type'     => 'boolean',
-				),
-			),
-		)
-	);
-} );
-
 /* ==========================================================================
-   ABILITY - EXPLAIN THIS CODE
+   STEP 4: ABILITY - EXPLAIN THIS CODE
    ========================================================================== */
 
 add_action( 'wp_abilities_api_init', function() {
@@ -375,7 +283,7 @@ add_action( 'wp_abilities_api_init', function() {
 			'description'         => __( 'Generates a clear, line-by-line or conceptual summary of a code snippet.', 'code-dropdown' ),
 			'show_in_rest'        => true,
 			'show_in_mcp'         => true,
-			'permission_callback' => '__return_true', // Publicly readable for front-end tutorial visitors
+			'permission_callback' => '__return_true',
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -408,211 +316,78 @@ add_action( 'wp_abilities_api_init', function() {
 	);
 } );
 
-/**
- * Execution callback for Step 4 code explanation ability.
- * Explicitly boots the AI Client Connector during front-end REST API execution.
- *
- * @param array $args Sanitized inputs matching input_schema.
- * @return array|WP_Error Output array containing 'explanation' string.
- */
 if ( ! function_exists( 'code_dropdown_execute_explain_ability' ) ) {
 	function code_dropdown_execute_explain_ability( array $args ) {
-error_log( '[Code Dropdown AI] Ability invoked with raw args: ' . wp_json_encode( $args ) );
+		error_log( '[Code Dropdown AI] Ability invoked with raw args: ' . wp_json_encode( $args ) );
 
+		$raw_input = isset( $args['code'] ) && is_string( $args['code'] ) ? $args['code'] : '';
+		$decoded   = html_entity_decode( $raw_input, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$decoded   = html_entity_decode( $decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$code      = wp_unslash( trim( $decoded ) );
+		$language  = isset( $args['language'] ) ? sanitize_text_field( $args['language'] ) : 'code';
 
-// 1. Prepare and sanitise the code input.
+		if ( empty( $code ) ) {
+			return new WP_Error(
+				'empty_code',
+				__( 'Code snippet cannot be empty.', 'code-dropdown' ),
+				array( 'status' => 400 )
+			);
+		}
 
-$raw_input = isset( $args['code'] ) && is_string( $args['code'] )
-	? $args['code']
-	: '';
-
-$decoded = html_entity_decode(
-	$raw_input,
-	ENT_QUOTES | ENT_HTML5,
-	'UTF-8'
-);
-
-$decoded = html_entity_decode(
-	$decoded,
-	ENT_QUOTES | ENT_HTML5,
-	'UTF-8'
-);
-
-$code = wp_unslash( trim( $decoded ) );
-
-$language = isset( $args['language'] )
-	? sanitize_text_field( $args['language'] )
-	: 'code';
-
-if ( empty( $code ) ) {
-	return new WP_Error(
-		'empty_code',
-		__( 'Code snippet cannot be empty.', 'code-dropdown' ),
-		array( 'status' => 400 )
-	);
-}
-
-
-// 2. Build the AI prompt.
-
-$prompt = "You are an expert technical instructor.\n```
-
-Analyze the following {$language} code snippet and explain what it does in exactly 3 clear, concise bullet points.
-
+		$prompt = "You are an expert technical instructor. Analyze the following {$language} code snippet and explain what it does in exactly 3 clear, concise bullet points.
 Requirements:
-
 * Maximum 25 words per bullet.
 * Focus on the actual functions, variables, conditions and logic present in the code.
 * Do not invent functionality that is not present.
-* Do not include a preamble.
-* Do not use markdown code fences.
+* Do not include a preamble or markdown code fences.
 * Return only the 3 bullet points.
 
 Code Snippet:
 {$code}";
 
-// 3. Check that the WordPress AI Client is available.
-if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-	error_log(
-		'[Code Dropdown AI Error] wp_ai_client_prompt() is not available.'
-	);
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return new WP_Error(
+				'ai_client_unavailable',
+				__( 'The WordPress AI Client is not available.', 'code-dropdown' ),
+				array( 'status' => 503 )
+			);
+		}
 
-	return new WP_Error(
-		'ai_client_unavailable',
-		__(
-			'The WordPress AI Client is not available.',
-			'code-dropdown'
-		),
-		array( 'status' => 503 )
-	);
-}
+		try {
+			$result = wp_ai_client_prompt( $prompt )->generate_text();
 
-// 4. Generate the response using the current WordPress AI Client API.
-// wp_ai_client_prompt() returns a WP_AI_Client_Prompt_Builder.
-// The builder uses generate_text() as the text-generation method.
-try {
-	error_log(
-		'[Code Dropdown AI] Calling wp_ai_client_prompt()->generate_text()'
-	);
+			if ( is_wp_error( $result ) ) {
+				error_log( '[Code Dropdown AI Error] generate_text() failed: ' . $result->get_error_message() );
+				return $result;
+			}
 
-	$result = wp_ai_client_prompt( $prompt )->generate_text();
+			$explanation = is_string( $result ) ? trim( $result ) : '';
 
-	/*
-	 * generate_text() returns WP_Error when generation fails.
-	 */
-	if ( is_wp_error( $result ) ) {
-		error_log(
-			'[Code Dropdown AI Error] generate_text() failed: ' .
-			$result->get_error_message()
-		);
+			if ( empty( $explanation ) ) {
+				return new WP_Error(
+					'ai_empty_response',
+					__( 'The AI provider returned an empty response.', 'code-dropdown' ),
+					array( 'status' => 502 )
+				);
+			}
 
-		error_log(
-			'[Code Dropdown AI Error] Error code: ' .
-			$result->get_error_code()
-		);
+			return array(
+				'explanation' => sanitize_textarea_field( $explanation ),
+			);
 
-		return $result;
+		} catch ( Throwable $e ) {
+			error_log( '[Code Dropdown AI Exception] ' . $e->getMessage() );
+			return new WP_Error(
+				'ai_generation_exception',
+				__( 'An unexpected error occurred while generating the explanation.', 'code-dropdown' ),
+				array( 'status' => 500 )
+			);
+		}
 	}
-
-	// 5. Validate the generated response.
-	$explanation = is_string( $result )
-		? trim( $result )
-		: '';
-
-	if ( empty( $explanation ) ) {
-		error_log(
-			'[Code Dropdown AI Error] generate_text() returned an empty response.'
-		);
-
-		return new WP_Error(
-			'ai_empty_response',
-			__(
-				'The AI provider returned an empty response.',
-				'code-dropdown'
-			),
-			array( 'status' => 502 )
-		);
-	}
-
-	error_log(
-		'[Code Dropdown AI Success] AI explanation generated successfully.'
-	);
-
-	error_log(
-		'[Code Dropdown AI Response] ' . $explanation
-	);
-
-	return array(
-		'explanation' => sanitize_textarea_field( $explanation ),
-	);
-
-} catch ( Throwable $e ) {
-	error_log(
-		'[Code Dropdown AI Exception] ' . $e->getMessage()
-	);
-
-	return new WP_Error(
-		'ai_generation_exception',
-		__(
-			'An unexpected error occurred while generating the explanation.',
-			'code-dropdown'
-		),
-		array(
-			'status' => 500,
-		)
-	);
 }
-
-}
-
-}
-
-/* Ensure Direct REST Fallback Route Flushes Cleanly */
-add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/explain-code',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$params   = $request->get_json_params();
-				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
-
-				return code_dropdown_execute_explain_ability( array(
-					'code'     => (string) $raw_code,
-					'language' => (string) $language,
-				) );
-			},
-			'permission_callback' => '__return_true',
-		)
-	);
-} );
-
-/* Fallback REST route for explain-code */
-add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/explain-code',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$params   = $request->get_json_params();
-				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
-
-				return code_dropdown_execute_explain_ability( array(
-					'code'     => (string) $raw_code,
-					'language' => (string) $language,
-				) );
-			},
-			'permission_callback' => '__return_true',
-		)
-	);
-} );
 
 /* ==========================================================================
-   ABILITY - CUSTOMIZE CODE / ADAPT TO MY SETUP
+   STEP 5: ABILITY - CUSTOMIZE CODE / ADAPT TO MY SETUP
    ========================================================================== */
 
 add_action( 'wp_abilities_api_init', function() {
@@ -628,7 +403,7 @@ add_action( 'wp_abilities_api_init', function() {
 			'description'         => __( 'Replaces placeholder variables and config parameters in a code snippet with user-provided setup values.', 'code-dropdown' ),
 			'show_in_rest'        => true,
 			'show_in_mcp'         => true,
-			'permission_callback' => '__return_true', // Publicly readable for front-end reader customization
+			'permission_callback' => '__return_true',
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -721,41 +496,152 @@ Original Code:
 	}
 }
 
-// Add this route block inside rest_api_init in code-dropdown-block.php
-register_rest_route(
-	'code-dropdown/v1',
-	'/customize-code',
-	array(
-		'methods'             => 'POST',
-		'callback'            => function( WP_REST_Request $request ) {
-			$params      = $request->get_json_params();
-			$raw_code    = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-			$instruction = is_array( $params ) && isset( $params['userInstruction'] ) ? $params['userInstruction'] : $request->get_param( 'userInstruction' );
-			$language    = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+/* ==========================================================================
+   CONSOLIDATED REST API FALLBACK CONTROLLERS
+   ========================================================================== */
 
-			return code_dropdown_execute_customize_ability( array(
-				'code'            => (string) $raw_code,
-				'userInstruction' => (string) $instruction,
-				'language'        => (string) $language,
-			) );
-		},
-		'permission_callback' => '__return_true',
-		'args'                => array(
-			'code'            => array(
-				'required'          => true,
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
+add_action( 'rest_api_init', function() {
+	// Auto-Fill Metadata Endpoint
+	register_rest_route(
+		'code-dropdown/v1',
+		'/auto-fill-metadata',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$params   = $request->get_json_params();
+				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+				return code_dropdown_execute_autofill_ability( array( 'code' => (string) $raw_code ) );
+			},
+			'permission_callback' => function() {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'code' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_textarea_field',
+				),
 			),
-			'userInstruction' => array(
-				'required'          => true,
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+		)
+	);
+
+	// Toggle Task Completion Endpoint
+	register_rest_route(
+		'code-dropdown/v1',
+		'/toggle-complete',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$user_id  = get_current_user_id();
+				$block_id = sanitize_text_field( $request->get_param( 'block_id' ) );
+				$status   = (bool) $request->get_param( 'status' );
+
+				if ( ! $user_id ) {
+					return new WP_Error( 'unauthorized', __( 'User not logged in.', 'code-dropdown' ), array( 'status' => 401 ) );
+				}
+
+				if ( empty( $block_id ) ) {
+					return new WP_Error( 'invalid_id', __( 'Block ID is required.', 'code-dropdown' ), array( 'status' => 400 ) );
+				}
+
+				$saved_tasks = get_user_meta( $user_id, '_wpe_completed_blocks', true );
+				if ( ! is_array( $saved_tasks ) ) {
+					$saved_tasks = array();
+				}
+
+				$saved_tasks[ $block_id ] = $status;
+				update_user_meta( $user_id, '_wpe_completed_blocks', $saved_tasks );
+
+				return array(
+					'success' => true,
+					'tasks'   => $saved_tasks,
+				);
+			},
+			'permission_callback' => function() {
+				return is_user_logged_in();
+			},
+			'args'                => array(
+				'block_id' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'status'   => array(
+					'required' => true,
+					'type'     => 'boolean',
+				),
 			),
-			'language'        => array(
-				'required'          => false,
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+		)
+	);
+
+	// Explain Code Endpoint
+	register_rest_route(
+		'code-dropdown/v1',
+		'/explain-code',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$params   = $request->get_json_params();
+				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+
+				return code_dropdown_execute_explain_ability( array(
+					'code'     => (string) $raw_code,
+					'language' => (string) $language,
+				) );
+			},
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'code'     => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_textarea_field',
+				),
+				'language' => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
 			),
-		),
-	)
-);
+		)
+	);
+
+	// Customize Code Endpoint
+	register_rest_route(
+		'code-dropdown/v1',
+		'/customize-code',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$params      = $request->get_json_params();
+				$raw_code    = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+				$instruction = is_array( $params ) && isset( $params['userInstruction'] ) ? $params['userInstruction'] : $request->get_param( 'userInstruction' );
+				$language    = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+
+				return code_dropdown_execute_customize_ability( array(
+					'code'            => (string) $raw_code,
+					'userInstruction' => (string) $instruction,
+					'language'        => (string) $language,
+				) );
+			},
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'code'            => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_textarea_field',
+				),
+				'userInstruction' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'language'        => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		)
+	);
+} );
