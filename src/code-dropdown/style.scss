@@ -1,7 +1,8 @@
 /* ==========================================================================
    1. MAIN BLOCK CONTAINERS (SHARED CONFIGURATION)
    ========================================================================== */
-.wp-block-wpe-code-dropdown-editor {
+.wp-block-wpe-code-dropdown-editor,
+.wp-block-wpe-code-dropdown {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 16px;
     display: flex;
@@ -38,7 +39,7 @@
     }
 
     /* ----------------------------------------------------------------------
-       DYNAMIC CUSTOM SIDEBAR CONTROLS (DARK THEME & COMPACT SPACING)
+       DYNAMIC CUSTOM CONTROLS (DARK THEME & COMPACT SPACING)
        ---------------------------------------------------------------------- */
     &.dark-theme {
         background: #1e1e1e !important;
@@ -71,6 +72,11 @@
             background: #1a1a1a !important;
             border-right-color: #2e2e2e !important;
             color: #4b5563 !important;
+
+            span.is-highlighted {
+                background-color: rgba(255, 235, 59, 0.15) !important;
+                color: #ffeb3b !important;
+            }
         }
 
         .code-footer {
@@ -84,19 +90,26 @@
         }
 
         .copy-button,
+        .explain-button,
         .toggle-button {
             color: #a1a1aa !important;
 
-            &:hover {
+            &:hover,
+            &.active {
                 background: #2a2a2a !important;
                 color: #ffffff !important;
-                border: none !important;
+                border-color: #3f3f46 !important;
             }
             &:active {
                 background: #3a3a3a !important;
                 color: #ffffff !important;
-                border: none !important;
             }
+        }
+
+        .code-explanation-drawer {
+            background: #141414 !important;
+            border-top-color: #2e2e2e !important;
+            color: #d4d4d8 !important;
         }
         
         &.complete {
@@ -161,7 +174,7 @@ a:focus {
 .code-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
 
 /* ----------------------------------------------------------------------
@@ -204,6 +217,28 @@ a:focus {
     }
 }
 
+/* Step 4 Explain Code Button */
+.explain-button {
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+
+    &:hover,
+    &.active {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: #ffffff;
+    }
+}
+
 /* ==========================================================================
    3. LANGUAGE SYNTAX DISPLAY BADGES
    ========================================================================== */
@@ -217,15 +252,18 @@ a:focus {
     background: #e2e8f0;
     color: #475569;
     flex-shrink: 0;
+
+    &.lang-php { background: #eef2ff; color: #4f46e5; }
+    &.lang-js, &.lang-javascript { background: #fef9c3; color: #854d0e; }
+    &.lang-css { background: #ecfdf5; color: #047857; }
+    &.lang-html { background: #fff7ed; color: #c2410c; }
+    &.lang-json { background: #f1f5f9; color: #0f172a; }
+    &.lang-sql { background: #f0f9ff; color: #0284c7; }
+    &.lang-bash { background: #1e293b; color: #f8fafc; }
 }
 
-.code-badge.lang-php { background: #eef2ff; color: #4f46e5; }
-.code-badge.lang-js { background: #fef9c3; color: #854d0e; }
-.code-badge.lang-css { background: #ecfdf5; color: #047857; }
-.code-badge.lang-html { background: #fff7ed; color: #c2410c; }
-
 /* ==========================================================================
-   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE (STRUCTURALLY ALIGNED)
+   4. COLLAPSIBLE DRAWER BODY & SCROLL ENGINE
    ========================================================================== */
 .editor-inner-blocks-wrapper {
     width: 100%;
@@ -234,31 +272,24 @@ a:focus {
     position: relative;
     background: #fafafa;
     
-    // BACKEND EDITOR DEFAULT: Keep the panel completely visible and operational
     height: auto;
     opacity: 1;
     overflow: visible;
 }
 
-/* FRONTEND INTERACTIVITY: Apply accordion collapsing ONLY on the live site.
-   WordPress automatically wraps frontend blocks in a simple class structure. 
-   By targeting our element inside its parent block container wrapper, we isolate the frontend. */
-.wp-block-wpe-code-dropdown-editor .editor-inner-blocks-wrapper {
+.wp-block-wpe-code-dropdown-editor .editor-inner-blocks-wrapper,
+.wp-block-wpe-code-dropdown .editor-inner-blocks-wrapper {
     height: 0;
     opacity: 0;
     overflow: hidden;
     transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 
-    // Open state triggered by the Interactivity API on click
     &.active {
         height: auto;
         opacity: 1;
     }
 }
 
-/* ----------------------------------------------------------------------
-   SCROLL CONTAINERS & SIDEBAR TRACKING (UNTOUCHED ARCHITECTURE)
-   ---------------------------------------------------------------------- */
 .panel-scroll-container {
     max-height: var(--panel-max-height, none) !important;
     overflow-y: auto !important;
@@ -295,6 +326,12 @@ a:focus {
     span {
         display: block;
         font-family: 'Fira Code', Consolas, Monaco, monospace;
+
+        &.is-highlighted {
+            background-color: rgba(255, 235, 59, 0.35);
+            color: #000000;
+            font-weight: 700;
+        }
     }
 }
 
@@ -314,14 +351,11 @@ a:focus {
         background: transparent !important; 
         font-family: 'Fira Code', Consolas, Monaco, monospace !important;
         text-shadow: none !important; 
-        
-        // Horizontal Scroll Lock
         white-space: pre !important;
         word-wrap: normal !important;
         word-break: normal !important;
     }
     
-    /* Token highlights for Light Mode */
     .token.comment { color: #718096; }
     .token.keyword { color: #d53f8c; font-weight: bold; }
     .token.string { color: #38a169; }
@@ -335,7 +369,51 @@ a:focus {
 }
 
 /* ==========================================================================
-   5. COMPONENT LAYOUT FOOTER WORKSPACE
+   5. STEP 4: AI EXPLANATION DRAWER SUB-SYSTEM
+   ========================================================================== */
+.code-explanation-drawer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #334155;
+    transition: all 0.3s ease;
+
+    .explanation-inner {
+        position: relative;
+    }
+
+    .explanation-loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-style: italic;
+
+        .spinner-icon {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #0f172a;
+            border-radius: 50%;
+            animation: wpe-spin 0.8s linear infinite;
+        }
+    }
+
+    .explanation-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .explanation-error {
+        color: #ef4444;
+        font-size: 0.8125rem;
+    }
+}
+
+/* ==========================================================================
+   6. COMPONENT LAYOUT FOOTER WORKSPACE
    ========================================================================== */
 .code-footer {
     display: flex;
@@ -386,71 +464,12 @@ a:focus {
     }
 }
 
-/* ==========================================================================
-   6. COMMENTS SUB-SYSTEM COMPONENT SETTINGS
-   ========================================================================== */
-.comments-wrapper {
-    padding: 1rem;
-    border: #ccc 1px dashed;
-    border-radius: 8px;
-    margin: 1rem;
-    h3 { margin: 0; }
-
-    button {
-        margin-top: 0.5em;
-        background: #00b2ff;
-        color: #fff;
-        border: none;
-        border-radius: 100px;
-        padding: 6px 10px;
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-}
-
-.task-comment {
-    margin-top: 1em;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: height 0.33s ease, opacity 0.25s ease;
-
-    &.animate {
-        height: auto;
-        opacity: 1;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 0.5em;
-        font-weight: bold;
-    }
-
-    textarea {
-        width: 98%;
-        min-height: 80px;
-        padding: 0.5em;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        resize: vertical;
-
-        &:focus {
-            border-color: #2979fb;
-            outline: none;
-            box-shadow: 0 0 5px rgba(41, 121, 251, 0.5);
-        }
-    }
-}
-
-.task-comments p {
-    padding: 0.5em;
-    border-radius: 4px;
-}
-
+/* KEYFRAME ANIMATIONS */
 @keyframes popIn {
     0% { transform: scale(0.7); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes wpe-spin {
+    to { transform: rotate(360deg); }
 }

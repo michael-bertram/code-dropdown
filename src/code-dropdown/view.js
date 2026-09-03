@@ -28,25 +28,17 @@ const { state } = store('wpe', {
   },
 
   actions: {
-    /**
-     * Accordion open/close toggle
-     */
     toggleOpen() {
       const context = getContext();
       context.isOpen = !context.isOpen;
       context.toggleText = context.isOpen ? context.closeText : context.openText;
     },
 
-    /**
-     * Step 3: Persistent Completion Toggle
-     * Syncs state instantly in localStorage and asynchronously with WordPress user_meta via REST API.
-     */
     *toggleComplete() {
       const context = getContext();
       context.isComplete = !context.isComplete;
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
 
-      // 1. Optimistic Local Update
       state.tasks = {
         ...state.tasks,
         [context.id]: context.isComplete,
@@ -54,7 +46,6 @@ const { state } = store('wpe', {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
 
-      // 2. Server-Side Persistence for Authenticated Users
       try {
         yield fetch('/wp-json/code-dropdown/v1/toggle-complete', {
           method: 'POST',
@@ -68,13 +59,71 @@ const { state } = store('wpe', {
           }),
         });
       } catch (err) {
-        // Silent catch: falls back safely to localStorage for guests/offline states
+        // Guest fallback via localStorage
       }
     },
 
     /**
-     * Clipboard Copy Action
+     * Step 4: Explain Code Generator Action
      */
+    *explainCode() {
+      const context = getContext();
+
+      // Toggle drawer off if already open
+      if (context.isExplaining && context.explanationText) {
+        context.isExplaining = false;
+        return;
+      }
+
+      context.isExplaining = true;
+
+      // Avoid re-fetching if explanation is already cached in context
+      if (context.explanationText) {
+        return;
+      }
+
+      context.isAnalyzingExplanation = true;
+      context.explanationError = null;
+
+      try {
+        let response;
+        try {
+          // Primary Path: Abilities API REST Controller
+          const res = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/explain-code/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: context.rawCodeText || '',
+              language: context.codeLanguage || 'PHP',
+            }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          response = yield res.json();
+        } catch (primaryErr) {
+          // Fallback Path: Direct Direct Plugin REST Route
+          const fallbackRes = yield fetch('/wp-json/code-dropdown/v1/explain-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: context.rawCodeText || '',
+              language: context.codeLanguage || 'PHP',
+            }),
+          });
+          response = yield fallbackRes.json();
+        }
+
+        if (response && response.explanation) {
+          context.explanationText = response.explanation;
+        } else {
+          throw new Error('Invalid explanation payload');
+        }
+      } catch (err) {
+        context.explanationError = 'Unable to generate explanation right now.';
+      } finally {
+        context.isAnalyzingExplanation = false;
+      }
+    },
+
     async copyToClipboard() {
       const context = getContext();
       const { ref: buttonElement } = getElement();
@@ -133,9 +182,12 @@ const { state } = store('wpe', {
 
       context.isComplete = state.tasks[context.id] ?? false;
       context.isCopied = false;
+      context.isExplaining = false;
+      context.isAnalyzingExplanation = false;
+      context.explanationText = '';
+      context.explanationError = null;
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
 
-      // Parse highlight line ranges (e.g. "3, 5-8") into active line indexes
       if (context.highlightLines) {
         const targetLines = new Set();
         const ranges = context.highlightLines.split(',');

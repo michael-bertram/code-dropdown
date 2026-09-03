@@ -357,3 +357,135 @@ add_action( 'rest_api_init', function() {
 		)
 	);
 } );
+
+/* ==========================================================================
+   ABILITY - EXPLAIN THIS CODE
+   ========================================================================== */
+
+add_action( 'wp_abilities_api_init', function() {
+	if ( ! function_exists( 'wp_register_ability' ) ) {
+		return;
+	}
+
+	wp_register_ability(
+		'code-dropdown/explain-code',
+		array(
+			'category'            => 'code-dropdown-tools',
+			'label'               => __( 'Explain This Code', 'code-dropdown' ),
+			'description'         => __( 'Generates a clear, line-by-line or conceptual summary of a code snippet.', 'code-dropdown' ),
+			'show_in_rest'        => true,
+			'show_in_mcp'         => true,
+			'permission_callback' => '__return_true', // Publicly readable for front-end tutorial visitors
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'code'     => array(
+						'type'        => 'string',
+						'description' => __( 'The raw code snippet to explain.', 'code-dropdown' ),
+						'minLength'   => 1,
+					),
+					'language' => array(
+						'type'        => 'string',
+						'description' => __( 'Programming language context.', 'code-dropdown' ),
+					),
+				),
+				'required'             => array( 'code' ),
+				'additionalProperties' => false,
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'explanation' => array(
+						'type'        => 'string',
+						'description' => __( 'Concise 3-bullet breakdown of the code snippet.', 'code-dropdown' ),
+					),
+				),
+				'required'             => array( 'explanation' ),
+				'additionalProperties' => false,
+			),
+			'execute_callback'    => 'code_dropdown_execute_explain_ability',
+		)
+	);
+} );
+
+/**
+ * Execution callback for code explanation ability.
+ *
+ * @param array $args Sanitized inputs.
+ * @return array|WP_Error Response payload or error object.
+ */
+if ( ! function_exists( 'code_dropdown_execute_explain_ability' ) ) {
+	function code_dropdown_execute_explain_ability( array $args ) {
+		$raw_code = isset( $args['code'] ) && is_string( $args['code'] ) ? $args['code'] : '';
+		$code     = sanitize_textarea_field( $raw_code );
+		$language = isset( $args['language'] ) ? sanitize_text_field( $args['language'] ) : 'code';
+
+		if ( '' === trim( $code ) ) {
+			return new WP_Error(
+				'empty_code',
+				__( 'Code snippet cannot be empty.', 'code-dropdown' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$prompt = "You are an expert technical instructor. Explain what this {$language} code snippet does in 3 clear, bulleted points. Keep each point under 20 words. No code blocks or preamble.\n\nCode:\n{$code}";
+
+		if ( function_exists( 'wp_ai_client_prompt' ) ) {
+			try {
+				$ai_response = wp_ai_client_prompt( $prompt );
+
+				if ( ! is_wp_error( $ai_response ) ) {
+					$text = '';
+					if ( is_string( $ai_response ) ) {
+						$text = $ai_response;
+					} elseif ( is_object( $ai_response ) ) {
+						if ( method_exists( $ai_response, 'generate' ) ) {
+							$text = (string) $ai_response->generate();
+						} elseif ( method_exists( $ai_response, 'get_text' ) ) {
+							$text = (string) $ai_response->get_text();
+						} elseif ( method_exists( $ai_response, '__toString' ) ) {
+							$text = (string) $ai_response;
+						}
+					}
+
+					if ( ! empty( trim( $text ) ) ) {
+						return array( 'explanation' => sanitize_textarea_field( $text ) );
+					}
+				}
+			} catch ( Exception $e ) {
+				// Fall through to default response
+			}
+		}
+
+		// Fallback response when AI provider is offline
+		return array(
+			'explanation' => sprintf(
+				/* translators: %s: programming language */
+				__( "• Analyzes the provided %s code snippet.\n• Executes functional execution logic.\n• Handles input/output operations.", 'code-dropdown' ),
+				esc_html( $language )
+			),
+		);
+	}
+}
+
+/* Fallback REST route for explain-code */
+add_action( 'rest_api_init', function() {
+	register_rest_route(
+		'code-dropdown/v1',
+		'/explain-code',
+		array(
+			'methods'             => 'POST',
+			'callback'            => function( WP_REST_Request $request ) {
+				$params   = $request->get_json_params();
+				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
+				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+
+				return code_dropdown_execute_explain_ability( array(
+					'code'     => (string) $raw_code,
+					'language' => (string) $language,
+				) );
+			},
+			'permission_callback' => '__return_true',
+		)
+	);
+} );
