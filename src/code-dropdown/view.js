@@ -163,6 +163,82 @@ const { state } = store('wpe', {
         }
       }
     },
+    // Add these actions inside store('wpe', { actions: { ... } })
+handleCustomInstructionInput(e) {
+  const context = getContext();
+  context.userInstruction = e.target.value;
+},
+
+togglePersonalizeDrawer() {
+  const context = getContext();
+  context.isPersonalizing = !context.isPersonalizing;
+},
+
+*customizeCode() {
+  const context = getContext();
+
+  if (!context.userInstruction || !context.userInstruction.trim()) {
+    context.personalizeError = 'Please enter your setup variables or instructions.';
+    return;
+  }
+
+  context.isCustomizing = true;
+  context.personalizeError = '';
+
+  const payload = JSON.stringify({
+    code: context.activeCodeText || context.rawCodeText || '',
+    userInstruction: context.userInstruction,
+    language: context.codeLanguage || 'PHP',
+  });
+
+  let response = null;
+
+  try {
+    const directRes = yield fetch('/wp-json/code-dropdown/v1/customize-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+    });
+    if (directRes.ok) {
+      response = yield directRes.json();
+    }
+  } catch (err) {
+    // Fall through
+  }
+
+  if (!response) {
+    try {
+      const abilityRes = yield fetch('/wp-json/wp/v2/abilities/code-dropdown/customize-code/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      });
+      if (abilityRes.ok) {
+        response = yield abilityRes.json();
+      }
+    } catch (err) {
+      // Fall through
+    }
+  }
+
+  if (response && response.personalizedCode) {
+    context.activeCodeText = response.personalizedCode;
+    context.isPersonalized = true;
+    context.isPersonalizing = false;
+    context.userInstruction = '';
+  } else {
+    context.personalizeError = 'Unable to adapt code to your setup right now.';
+  }
+
+  context.isCustomizing = false;
+},
+
+resetCode() {
+  const context = getContext();
+  context.activeCodeText = context.rawCodeText;
+  context.isPersonalized = false;
+  context.personalizeError = '';
+},
   },
 
   callbacks: {
@@ -193,6 +269,12 @@ const { state } = store('wpe', {
       context.explanationText = '';
       context.explanationError = null;
       context.completeText = context.isComplete ? '✓' : 'Mark as complete';
+      context.isPersonalizing = false;
+      context.isCustomizing = false;
+      context.isPersonalized = false;
+      context.userInstruction = '';
+      context.personalizeError = '';
+      context.activeCodeText = context.rawCodeText;
 
       if (context.highlightLines) {
         const targetLines = new Set();
