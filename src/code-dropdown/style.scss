@@ -384,12 +384,11 @@ a:focus {
         position: relative;
     }
 
-    .explanation-loading {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #64748b;
-        font-style: italic;
+    .explanation-loading-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
 
         .spinner-icon {
             width: 14px;

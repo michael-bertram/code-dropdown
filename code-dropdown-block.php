@@ -569,44 +569,31 @@ try {
 
 /* Ensure Direct REST Fallback Route Flushes Cleanly */
 add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/explain-code',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$params   = $request->get_json_params();
-				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+    register_rest_route(
+        'code-dropdown/v1',
+        '/explain-code',
+        array(
+            'methods'             => 'POST',
+            'callback'            => function( WP_REST_Request $request ) {
 
-				return code_dropdown_execute_explain_ability( array(
-					'code'     => (string) $raw_code,
-					'language' => (string) $language,
-				) );
-			},
-			'permission_callback' => '__return_true',
-		)
-	);
-} );
+                $params = $request->get_json_params();
 
-/* Fallback REST route for explain-code */
-add_action( 'rest_api_init', function() {
-	register_rest_route(
-		'code-dropdown/v1',
-		'/explain-code',
-		array(
-			'methods'             => 'POST',
-			'callback'            => function( WP_REST_Request $request ) {
-				$params   = $request->get_json_params();
-				$raw_code = is_array( $params ) && isset( $params['code'] ) ? $params['code'] : $request->get_param( 'code' );
-				$language = is_array( $params ) && isset( $params['language'] ) ? $params['language'] : $request->get_param( 'language' );
+                $raw_code = is_array( $params ) && isset( $params['code'] )
+                    ? $params['code']
+                    : $request->get_param( 'code' );
 
-				return code_dropdown_execute_explain_ability( array(
-					'code'     => (string) $raw_code,
-					'language' => (string) $language,
-				) );
-			},
-			'permission_callback' => '__return_true',
-		)
-	);
+                $language = is_array( $params ) && isset( $params['language'] )
+                    ? $params['language']
+                    : $request->get_param( 'language' );
+
+                return code_dropdown_execute_explain_ability(
+                    array(
+                        'code'     => (string) $raw_code,
+                        'language' => (string) $language,
+                    )
+                );
+            },
+            'permission_callback' => '__return_true',
+        )
+    );
 } );

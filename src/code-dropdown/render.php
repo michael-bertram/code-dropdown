@@ -101,7 +101,7 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 		'isExplaining'            => false,
 		'isAnalyzingExplanation'  => false,
 		'explanationText'         => '',
-		'formattedExplanationHtml'=> '',
+		'explanationItems'       => array(),
 		'explanationError'        => '',
 		'isPersonalizing'         => false,
 		'isCustomizing'           => false,
@@ -189,12 +189,28 @@ $selected_lang = $prism_lang_map[ $code_lang ] ?? 'plaintext';
 		</div>
 
 		<!-- Formatted Explanation Output -->
-		<div 
-			class="explanation-content" 
-			data-wp-bind--hidden="context.isAnalyzingExplanation || !context.explanationText"
-		>
-			<div class="explanation-formatted-list" data-wp-html="context.formattedExplanationHtml"></div>
-		</div>
+            <div
+        class="explanation-content"
+        data-wp-bind--hidden="context.isAnalyzingExplanation || !context.explanationItems.length"
+    >
+        <div class="explanation-formatted-list">
+
+            <template data-wp-each="context.explanationItems">
+                <div class="explanation-bullet-item">
+                    <span
+                        class="bullet-badge"
+                        aria-hidden="true"
+                    ></span>
+
+                    <div
+                        class="bullet-text"
+                        data-wp-text="context.item"
+                    ></div>
+                </div>
+            </template>
+
+        </div>
+    </div>
 
 		<!-- Error Message Card -->
 		<div 
